@@ -20,6 +20,44 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## DynamoDB Local (Docker)
+
+ローカルテスト用に、AWS 公式の DynamoDB Local イメージ（`amazon/dynamodb-local`）を Docker Compose で起動できます。
+
+### 起動 / 停止
+
+```bash
+docker compose -f compose.dynamodb-local.yml up -d
+docker compose -f compose.dynamodb-local.yml ps
+
+# 停止
+docker compose -f compose.dynamodb-local.yml down
+```
+
+### 疎通確認（AWS CLI）
+
+事前に AWS CLI をインストールしている前提です。
+
+```bash
+aws dynamodb list-tables --endpoint-url http://localhost:8000 --region ap-northeast-1
+```
+
+必要ならテーブル作成もできます:
+
+```bash
+aws dynamodb create-table \
+  --endpoint-url http://localhost:8000 \
+  --region ap-northeast-1 \
+  --table-name ExampleTable \
+  --attribute-definitions AttributeName=pk,AttributeType=S \
+  --key-schema AttributeName=pk,KeyType=HASH \
+  --billing-mode PAY_PER_REQUEST
+```
+
+### アプリからの接続先
+
+アプリ側の AWS SDK 設定で `endpoint` を `http://localhost:8000` に向けてください（例: 環境変数 `DYNAMODB_ENDPOINT_URL=http://localhost:8000` など）。
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:
