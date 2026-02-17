@@ -5,3 +5,77 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum AttemptStatus {
+  IN_PROGRESS
+  COMPLETED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  tokenVersion Int       @default(0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  attempts     Attempt[]
+}
+
+model Question {
+  id               String            @id @default(cuid())
+  category         String
+  level            Int
+  questionText     String
+  choices          Json
+  answerIndex      Int
+  explanation      String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  attemptQuestions AttemptQuestion[]
+
+  @@index([category, level])
+}
+
+model Attempt {
+  id        String          @id @default(cuid())
+  userId    String
+  filters   Json
+  status    AttemptStatus   @default(IN_PROGRESS)
+  startedAt DateTime        @default(now())
+  completedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions AttemptQuestion[]
+  result    Result?
+
+  @@index([userId])
+  @@index([status])
+}
+
+model AttemptQuestion {
+  id           String    @id @default(cuid())
+  attemptId    String
+  questionId   String
+  order        Int
+  selectedIndex Int?
+  isCorrect    Boolean?
+  answeredAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  attempt      Attempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question     Question  @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([attemptId, order])
+  @@unique([attemptId, questionId])
+  @@index([questionId])
+}
+
+model Result {
+  id                String   @id @default(cuid())
+  attemptId         String   @unique
+  overallPercent    Float
+  categoryBreakdown Json
+  createdAt         DateTime @default(now())
+  attempt           Attempt  @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+}
