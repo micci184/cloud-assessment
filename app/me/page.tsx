@@ -1,0 +1,10 @@
+export default function MePage() {
+  return (
+    <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+      <h1 className="text-xl font-semibold">/me</h1>
+      <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+        マイページ（履歴/スコア表示）は Issue #17 で実装します。
+      </p>
+    </section>
+  );
+}
