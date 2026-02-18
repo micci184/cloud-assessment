@@ -54,6 +54,11 @@ npm run db:migrate
 npm run db:studio
 ```
 
+## 設計ドキュメント
+
+- [ERD (Mermaid)](./docs/erd.md)
+- [OpenAPI定義](./docs/openapi.yaml)
+
 ## 初期構築で用意済みの内容（Issue #16）
 
 - Next.js App Router + TypeScript + Tailwind の土台
