@@ -18,22 +18,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SignupRequest'
+              $ref: "#/components/schemas/SignupRequest"
       responses:
-        '201':
+        "201":
           description: 作成成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSuccessResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
           description: メール重複
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/login:
     post:
@@ -44,22 +44,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: "#/components/schemas/LoginRequest"
       responses:
-        '200':
+        "200":
           description: ログイン成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthSuccessResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
+                $ref: "#/components/schemas/AuthSuccessResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
           description: 認証失敗
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: "#/components/schemas/ErrorResponse"
 
   /api/auth/logout:
     post:
@@ -68,14 +68,14 @@ paths:
       security:
         - cookieAuth: []
       responses:
-        '200':
+        "200":
           description: ログアウト成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MessageResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/MessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/attempts/create:
     post:
@@ -88,18 +88,18 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateAttemptRequest'
+              $ref: "#/components/schemas/CreateAttemptRequest"
       responses:
-        '201':
+        "201":
           description: 作成成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateAttemptResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+                $ref: "#/components/schemas/CreateAttemptResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /api/attempts/{attemptId}/answer:
     post:
@@ -118,22 +118,22 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AnswerAttemptRequest'
+              $ref: "#/components/schemas/AnswerAttemptRequest"
       responses:
-        '200':
+        "200":
           description: 保存成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AnswerAttemptResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/AnswerAttemptResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /api/attempts/{attemptId}/finalize:
     post:
@@ -148,20 +148,120 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: 採点成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FinalizeAttemptResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/FinalizeAttemptResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/questions/categories:
+    get:
+      tags: [Questions]
+      summary: カテゴリ一覧取得
+      description: Seedされた問題のカテゴリ一覧を返す。/select画面のカテゴリ選択UIで使用。
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoriesResponse"
+
+  /api/attempts/{attemptId}:
+    get:
+      tags: [Attempts]
+      summary: Attempt詳細取得
+      description: 指定Attemptの問題一覧・進捗・結果を返す。/quiz/[attemptId]画面で使用。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttemptDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/me:
+    get:
+      tags: [Me]
+      summary: ログインユーザー情報取得
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/me/attempts:
+    get:
+      tags: [Me]
+      summary: 受験履歴一覧取得
+      description: ログインユーザーの過去Attempt一覧（日時/条件/スコア）を返す。
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyAttemptsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/me/attempts/{attemptId}:
+    get:
+      tags: [Me]
+      summary: 受験結果詳細取得
+      description: 特定Attemptの詳細結果（間違い問題・解説含む）を返す。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyAttemptDetailResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
 components:
   securitySchemes:
@@ -176,25 +276,25 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
       description: 未認証
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     Forbidden:
       description: 権限不足（所有者不一致など）
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
     NotFound:
       description: 対象が存在しない
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorResponse'
+            $ref: "#/components/schemas/ErrorResponse"
 
   schemas:
     MessageResponse:
@@ -303,4 +403,139 @@ components:
         categoryBreakdown:
           type: object
           additionalProperties:
-            $ref: '#/components/schemas/CategoryBreakdownItem'
+            $ref: "#/components/schemas/CategoryBreakdownItem"
+
+    CategoriesResponse:
+      type: object
+      required: [categories]
+      properties:
+        categories:
+          type: array
+          items:
+            type: string
+          example: [VPC, EC2, S3, IAM, RDS, Lambda]
+
+    AttemptQuestionItem:
+      type: object
+      required: [id, questionId, order, questionText, choices]
+      properties:
+        id:
+          type: string
+        questionId:
+          type: string
+        order:
+          type: integer
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        selectedIndex:
+          type: integer
+          nullable: true
+        isCorrect:
+          type: boolean
+          nullable: true
+        answerIndex:
+          type: integer
+          description: finalize後のみ返却
+        explanation:
+          type: string
+          description: finalize後のみ返却
+        category:
+          type: string
+
+    AttemptDetailResponse:
+      type: object
+      required: [id, status, filters, startedAt, questions]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED]
+        filters:
+          type: object
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttemptQuestionItem"
+        result:
+          $ref: "#/components/schemas/FinalizeAttemptResponse"
+          nullable: true
+
+    MeResponse:
+      type: object
+      required: [id, email]
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+
+    MyAttemptSummary:
+      type: object
+      required: [id, status, filters, startedAt]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED]
+        filters:
+          type: object
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        overallPercent:
+          type: number
+          format: float
+          nullable: true
+          description: COMPLETED時のみ
+
+    MyAttemptsResponse:
+      type: object
+      required: [attempts]
+      properties:
+        attempts:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyAttemptSummary"
+
+    MyAttemptDetailResponse:
+      type: object
+      required: [id, status, filters, startedAt, questions, result]
+      properties:
+        id:
+          type: string
+        status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED]
+        filters:
+          type: object
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttemptQuestionItem"
+        result:
+          $ref: "#/components/schemas/FinalizeAttemptResponse"
