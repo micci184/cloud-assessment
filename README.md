@@ -35,7 +35,13 @@ docker-compose up -d
 npm run db:generate
 ```
 
-5. 開発サーバーを起動
+5. Seedデータを投入
+
+```bash
+npm run db:seed
+```
+
+6. 開発サーバーを起動
 
 ```bash
 npm run dev
@@ -51,6 +57,7 @@ npm run build
 npm run lint
 npm run db:generate
 npm run db:migrate
+npm run db:seed
 npm run db:studio
 ```
 
