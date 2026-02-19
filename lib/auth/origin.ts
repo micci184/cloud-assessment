@@ -9,3 +9,9 @@ export function isValidOrigin(request: Request): boolean {
 
   return origin === requestOrigin;
 }
+
+export function isJsonContentType(request: Request): boolean {
+  const contentType = request.headers.get("content-type");
+
+  return contentType?.includes("application/json") === true;
+}

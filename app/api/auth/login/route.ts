@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { setSessionCookie } from "@/lib/auth/cookie";
 import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
-import { isValidOrigin } from "@/lib/auth/origin";
+import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { verifyPassword } from "@/lib/auth/password";
 import { authInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
@@ -14,12 +14,19 @@ export async function POST(request: Request): Promise<NextResponse> {
     return messageResponse("forbidden origin", 403);
   }
 
+  if (!isJsonContentType(request)) {
+    return messageResponse("content-type must be application/json", 415);
+  }
+
   try {
     const body = await request.json();
     const parsed = authInputSchema.safeParse(body);
 
     if (!parsed.success) {
-      return messageResponse(parsed.error.issues[0]?.message ?? "invalid request", 400);
+      return messageResponse(
+        parsed.error.issues[0]?.message ?? "invalid request",
+        400,
+      );
     }
 
     const user = await prisma.user.findUnique({
@@ -37,7 +44,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       return messageResponse("invalid credentials", 401);
     }
 
-    const passwordMatched = await verifyPassword(parsed.data.password, user.passwordHash);
+    const passwordMatched = await verifyPassword(
+      parsed.data.password,
+      user.passwordHash,
+    );
 
     if (!passwordMatched) {
       return messageResponse("invalid credentials", 401);

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { getUserFromRequest } from "@/lib/auth/guards";
-import { isValidOrigin } from "@/lib/auth/origin";
+import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 
@@ -18,6 +18,10 @@ export async function POST(request: Request): Promise<NextResponse> {
   try {
     if (!isValidOrigin(request)) {
       return messageResponse("invalid origin", 403);
+    }
+
+    if (!isJsonContentType(request)) {
+      return messageResponse("content-type must be application/json", 415);
     }
 
     const user = await getUserFromRequest(request);
