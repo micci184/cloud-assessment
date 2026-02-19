@@ -4,6 +4,10 @@ import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
+import {
+  createAttemptFinalizedEvent,
+  logAttemptFinalizedEvent,
+} from "@/lib/logging/attempt-events";
 import { calculateScore } from "@/lib/quiz/scoring";
 
 type RouteContext = {
@@ -86,6 +90,14 @@ export async function POST(
         },
       });
     });
+
+    const finalizedEvent = createAttemptFinalizedEvent({
+      attemptId,
+      userId: attempt.userId,
+      overallPercent: result.overallPercent,
+      categoryBreakdown,
+    });
+    logAttemptFinalizedEvent(finalizedEvent);
 
     return NextResponse.json({
       overallPercent: result.overallPercent,
