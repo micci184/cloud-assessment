@@ -4,7 +4,7 @@ import { Prisma } from "@prisma/client";
 import { setSessionCookie } from "@/lib/auth/cookie";
 import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
-import { isValidOrigin } from "@/lib/auth/origin";
+import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { hashPassword } from "@/lib/auth/password";
 import { authInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
@@ -13,6 +13,10 @@ import { prisma } from "@/lib/db/prisma";
 export async function POST(request: Request): Promise<NextResponse> {
   if (!isValidOrigin(request)) {
     return messageResponse("forbidden origin", 403);
+  }
+
+  if (!isJsonContentType(request)) {
+    return messageResponse("content-type must be application/json", 415);
   }
 
   try {
