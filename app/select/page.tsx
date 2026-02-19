@@ -1,4 +1,8 @@
-export default function SelectPage() {
+import { requireUser } from "@/lib/auth/guards";
+
+export default async function SelectPage() {
+  await requireUser();
+
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
       <h1 className="text-xl font-semibold">/select</h1>

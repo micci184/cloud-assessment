@@ -1,3 +1,5 @@
+import { requireUser } from "@/lib/auth/guards";
+
 type QuizPageProps = {
   params: Promise<{
     attemptId: string;
@@ -5,6 +7,8 @@ type QuizPageProps = {
 };
 
 export default async function QuizPage({ params }: QuizPageProps) {
+  await requireUser();
+
   const { attemptId } = await params;
 
   return (
