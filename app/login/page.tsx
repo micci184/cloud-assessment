@@ -2,6 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import {
+  getPasswordPolicyErrorMessage,
+  PASSWORD_POLICY_RULES,
+} from "@/lib/auth/password-policy";
 
 type Mode = "login" | "signup";
 
@@ -22,8 +26,13 @@ const LoginPage = () => {
       return "有効なメールアドレスを入力してください";
     }
 
-    if (password.length < 8) {
-      return "パスワードは8文字以上で入力してください";
+    if (mode === "signup") {
+      const passwordError = getPasswordPolicyErrorMessage(password);
+      if (passwordError) {
+        return passwordError;
+      }
+    } else if (!password) {
+      return "パスワードを入力してください";
     }
 
     return null;
@@ -129,6 +138,13 @@ const LoginPage = () => {
               className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
               disabled={isSubmitting}
             />
+            {mode === "signup" && (
+              <ul className="mt-2 space-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+                {PASSWORD_POLICY_RULES.map((rule) => (
+                  <li key={rule}>- {rule}</li>
+                ))}
+              </ul>
+            )}
           </div>
 
           {error && (

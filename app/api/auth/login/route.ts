@@ -11,7 +11,7 @@ import {
 } from "@/lib/auth/login-rate-limit";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { verifyPassword } from "@/lib/auth/password";
-import { authInputSchema } from "@/lib/auth/schemas";
+import { loginInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
 import { prisma } from "@/lib/db/prisma";
 
@@ -26,7 +26,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   try {
     const body = await request.json();
-    const parsed = authInputSchema.safeParse(body);
+    const parsed = loginInputSchema.safeParse(body);
 
     if (!parsed.success) {
       return messageResponse(

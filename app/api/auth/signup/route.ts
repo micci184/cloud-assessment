@@ -6,7 +6,7 @@ import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { hashPassword } from "@/lib/auth/password";
-import { authInputSchema } from "@/lib/auth/schemas";
+import { signupInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
 import { prisma } from "@/lib/db/prisma";
 
@@ -21,7 +21,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
   try {
     const body = await request.json();
-    const parsed = authInputSchema.safeParse(body);
+    const parsed = signupInputSchema.safeParse(body);
 
     if (!parsed.success) {
       return messageResponse(

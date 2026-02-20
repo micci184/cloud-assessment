@@ -362,6 +362,7 @@ components:
         password:
           type: string
           minLength: 8
+          description: 英大文字・英小文字・数字を各1文字以上含む
 
     LoginRequest:
       type: object
