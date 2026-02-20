@@ -92,6 +92,7 @@ npm run dev
 | -------- | ------------------------------ | ------------ |
 | GET      | `/api/me/attempts`             | 受験履歴一覧 |
 | GET      | `/api/me/attempts/[attemptId]` | 受験履歴詳細 |
+| GET      | `/api/me/attempts/[attemptId]/export?format=csv\|json` | 受験結果エクスポート |
 
 ## セキュリティ
 

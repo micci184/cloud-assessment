@@ -263,6 +263,44 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/me/attempts/{attemptId}/export:
+    get:
+      tags: [Me]
+      summary: 受験結果エクスポート
+      description: 特定AttemptをJSONまたはCSVでエクスポートする。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [json, csv]
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExportAttemptResponse"
+            text/csv:
+              schema:
+                type: string
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
 components:
   securitySchemes:
     cookieAuth:
@@ -539,3 +577,71 @@ components:
             $ref: "#/components/schemas/AttemptQuestionItem"
         result:
           $ref: "#/components/schemas/FinalizeAttemptResponse"
+
+    ExportAttemptQuestion:
+      type: object
+      required:
+        - order
+        - category
+        - level
+        - questionText
+        - choices
+        - answerIndex
+        - explanation
+      properties:
+        order:
+          type: integer
+        category:
+          type: string
+        level:
+          type: integer
+        questionText:
+          type: string
+        choices:
+          type: array
+          items:
+            type: string
+        selectedIndex:
+          type: integer
+          nullable: true
+        answerIndex:
+          type: integer
+        isCorrect:
+          type: boolean
+          nullable: true
+        explanation:
+          type: string
+
+    ExportAttemptResponse:
+      type: object
+      required:
+        - attemptId
+        - status
+        - startedAt
+        - questions
+      properties:
+        attemptId:
+          type: string
+        status:
+          type: string
+          enum: [IN_PROGRESS, COMPLETED]
+        startedAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        overallPercent:
+          type: number
+          format: float
+          nullable: true
+        categoryBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryBreakdownItem"
+          nullable: true
+        questions:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExportAttemptQuestion"
