@@ -100,6 +100,7 @@ npm run dev
 - **パスワード**: bcryptハッシュ（平文保存禁止）
 - **Cookie**: `HttpOnly`, `SameSite=Lax`, `Secure`(本番), `Path=/`, 7日有効
 - **ログアウト**: `tokenVersion` をインクリメントして既存セッションを無効化
+- **ログイン保護**: `IP + email` 単位でレート制限（総当たり対策）
 - **CSRF対策**: 全POST APIでOriginチェック + JSON Content-Type限定
 - **所有者検証**: Attempt更新系APIで `attempt.userId === currentUser.id` を必須チェック
 - **入力検証**: Zodによるサーバーサイドバリデーション
