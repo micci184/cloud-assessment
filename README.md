@@ -31,7 +31,8 @@ npm install
 
 # 3. 環境変数を作成
 cp .env.example .env
-# .env の DATABASE_URL と AUTH_SECRET を確認・編集
+# .env の DATABASE_URL, AUTH_SECRET を確認・編集
+# Notion連携する場合は NOTION_API_KEY, NOTION_DATABASE_ID も設定
 
 # 4. PostgreSQLを起動
 docker-compose up -d
@@ -92,6 +93,7 @@ npm run dev
 | -------- | ------------------------------ | ------------ |
 | GET      | `/api/me/attempts`             | 受験履歴一覧 |
 | GET      | `/api/me/attempts/[attemptId]` | 受験履歴詳細 |
+| POST     | `/api/me/attempts/[attemptId]/deliver-notion` | 対象受験結果をNotionへ送信 |
 
 ## セキュリティ
 
@@ -118,6 +120,7 @@ npm run db:studio    # Prisma Studio起動
 - [ERD (Mermaid)](./docs/erd.md)
 - [OpenAPI定義](./docs/openapi.yaml)
 - [イベントログ仕様](./docs/event-logging.md)
+- [Notion送信仕様](./docs/notion-delivery.md)
 
 ## 既知の制約
 

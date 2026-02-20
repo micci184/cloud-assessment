@@ -72,13 +72,14 @@ export const POST = async (
     }));
 
     const { overallPercent, categoryBreakdown } = calculateScore(scoringData);
+    const completedAt = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
       await tx.attempt.update({
         where: { id: attemptId },
         data: {
           status: "COMPLETED",
-          completedAt: new Date(),
+          completedAt,
         },
       });
 
