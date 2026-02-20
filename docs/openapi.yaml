@@ -62,6 +62,11 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "429":
           description: 試行回数超過（レート制限）
+          headers:
+            Retry-After:
+              description: 次回試行までの待機秒数
+              schema:
+                type: integer
           content:
             application/json:
               schema:
@@ -273,7 +278,9 @@ paths:
     post:
       tags: [Me]
       summary: Notionへ受験結果を送信
-      description: 指定Attempt（完了済み）をNotion Databaseへ送信する。
+      description: |
+        指定Attempt（完了済み）をNotion Databaseへ送信する。
+        冪等性により、既に送信済みの場合は重複作成せず `duplicate: true` を返す。
       security:
         - cookieAuth: []
       parameters:
@@ -289,6 +296,24 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotionDeliveryResponse"
+              examples:
+                sent:
+                  summary: 新規送信
+                  value:
+                    status: sent
+                    attempts: 1
+                    duplicate: false
+                duplicate:
+                  summary: 既送信のためスキップ
+                  value:
+                    status: sent
+                    attempts: 1
+                    duplicate: true
+                skipped:
+                  summary: 設定不足で送信スキップ
+                  value:
+                    status: skipped
+                    reason: missing_config
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -303,6 +328,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/NotionDeliveryResponse"
+              examples:
+                failed:
+                  value:
+                    status: failed
+                    attempts: 3
+                    errorMessage: notion create page failed: status=503
 
 components:
   securitySchemes:
@@ -362,6 +393,7 @@ components:
         password:
           type: string
           minLength: 8
+          description: 英大文字・英小文字・数字を各1文字以上含む
 
     LoginRequest:
       type: object
@@ -590,9 +622,13 @@ components:
           enum: [sent, skipped, failed]
         attempts:
           type: integer
+          description: 送信を試みた回数
         duplicate:
           type: boolean
+          description: 既に同一AttemptがNotionに存在する場合はtrue
         reason:
           type: string
+          description: skipped時の理由
         errorMessage:
           type: string
+          description: failed時のエラー内容
