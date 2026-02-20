@@ -263,6 +263,41 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /api/me/attempts/{attemptId}/deliver-notion:
+    post:
+      tags: [Me]
+      summary: Notionへ受験結果を送信
+      description: 指定Attempt（完了済み）をNotion Databaseへ送信する。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 送信成功または冪等スキップ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "502":
+          description: 外部連携エラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryResponse"
+
 components:
   securitySchemes:
     cookieAuth:
@@ -539,3 +574,19 @@ components:
             $ref: "#/components/schemas/AttemptQuestionItem"
         result:
           $ref: "#/components/schemas/FinalizeAttemptResponse"
+
+    NotionDeliveryResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [sent, skipped, failed]
+        attempts:
+          type: integer
+        duplicate:
+          type: boolean
+        reason:
+          type: string
+        errorMessage:
+          type: string

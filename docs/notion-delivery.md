@@ -1,6 +1,6 @@
 # Notion Delivery
 
-`POST /api/attempts/[attemptId]/finalize` 成功時に、Notion Database へ受験結果を送信します。
+`POST /api/me/attempts/[attemptId]/deliver-notion` を実行したときに、Notion Database へ受験結果を送信します。
 
 ## 環境変数
 
@@ -21,6 +21,11 @@
 
 - 429 および 5xx を再送対象とする
 - 指数バックオフで再試行する（`delay * 2^(attempt-1)`）
+
+## 送信トリガー
+
+- 自動送信は行わない
+- `/me` 画面の「Notionへ送信」操作で対象Attemptのみ送信する
 
 ## ログ
 

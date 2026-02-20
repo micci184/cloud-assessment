@@ -93,6 +93,7 @@ npm run dev
 | -------- | ------------------------------ | ------------ |
 | GET      | `/api/me/attempts`             | 受験履歴一覧 |
 | GET      | `/api/me/attempts/[attemptId]` | 受験履歴詳細 |
+| POST     | `/api/me/attempts/[attemptId]/deliver-notion` | 対象受験結果をNotionへ送信 |
 
 ## セキュリティ
 

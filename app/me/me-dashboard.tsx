@@ -48,6 +48,12 @@ type AttemptDetail = AttemptSummary & {
   questions: QuestionDetail[];
 };
 
+type NotionDeliveryState = {
+  isSending: boolean;
+  message: string;
+  kind: "success" | "error" | null;
+};
+
 export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -55,6 +61,9 @@ export const MeDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  const [deliveryStateMap, setDeliveryStateMap] = useState<
+    Record<string, NotionDeliveryState>
+  >({});
 
   useEffect(() => {
     const fetchAttempts = async (): Promise<void> => {
@@ -96,6 +105,65 @@ export const MeDashboard = () => {
       setError("通信に失敗しました");
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const handleDeliverToNotion = async (attemptId: string): Promise<void> => {
+    setDeliveryStateMap((prev) => ({
+      ...prev,
+      [attemptId]: {
+        isSending: true,
+        message: "",
+        kind: null,
+      },
+    }));
+
+    try {
+      const response = await fetch(`/api/me/attempts/${attemptId}/deliver-notion`, {
+        method: "POST",
+      });
+
+      const data = (await response.json()) as {
+        status?: "sent" | "skipped" | "failed";
+        duplicate?: boolean;
+        reason?: string;
+        errorMessage?: string;
+      };
+
+      if (!response.ok) {
+        setDeliveryStateMap((prev) => ({
+          ...prev,
+          [attemptId]: {
+            isSending: false,
+            message: data.errorMessage ?? data.reason ?? "Notion送信に失敗しました",
+            kind: "error",
+          },
+        }));
+        return;
+      }
+
+      const successMessage =
+        data.status === "sent" && data.duplicate
+          ? "既に送信済みのため重複送信をスキップしました"
+          : "Notionに送信しました";
+
+      setDeliveryStateMap((prev) => ({
+        ...prev,
+        [attemptId]: {
+          isSending: false,
+          message: successMessage,
+          kind: "success",
+        },
+      }));
+    } catch {
+      setDeliveryStateMap((prev) => ({
+        ...prev,
+        [attemptId]: {
+          isSending: false,
+          message: "通信に失敗しました",
+          kind: "error",
+        },
+      }));
     }
   };
 
@@ -208,18 +276,23 @@ export const MeDashboard = () => {
           <div className="space-y-2">
             {attempts.map((attempt) => {
               const filters = attempt.filters as AttemptFilters;
+              const deliveryState = deliveryStateMap[attempt.id];
+              const canDeliver = attempt.status === "COMPLETED";
 
               return (
-                <button
+                <div
                   key={attempt.id}
-                  type="button"
-                  onClick={() => handleSelectAttempt(attempt.id)}
-                  className={`w-full rounded-lg border px-4 py-3 text-left transition hover:border-neutral-400 dark:hover:border-neutral-500 ${
+                  className={`w-full rounded-lg border px-4 py-3 text-left ${
                     selectedAttempt?.id === attempt.id
                       ? "border-blue-500 bg-blue-50/50 dark:border-blue-400 dark:bg-blue-900/10"
                       : "border-neutral-200 dark:border-neutral-700"
                   }`}
                 >
+                  <button
+                    type="button"
+                    onClick={() => handleSelectAttempt(attempt.id)}
+                    className="w-full text-left transition hover:text-inherit"
+                  >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <span
@@ -256,7 +329,33 @@ export const MeDashboard = () => {
                       </span>
                     )}
                   </div>
-                </button>
+                  </button>
+                  <div className="mt-3 flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleDeliverToNotion(attempt.id);
+                      }}
+                      disabled={!canDeliver || deliveryState?.isSending === true}
+                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                    >
+                      {deliveryState?.isSending === true
+                        ? "送信中..."
+                        : "Notionへ送信"}
+                    </button>
+                    {deliveryState?.message && (
+                      <span
+                        className={`text-xs ${
+                          deliveryState.kind === "success"
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
+                      >
+                        {deliveryState.message}
+                      </span>
+                    )}
+                  </div>
+                </div>
               );
             })}
           </div>
