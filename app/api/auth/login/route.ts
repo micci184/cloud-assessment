@@ -3,6 +3,12 @@ import { NextResponse } from "next/server";
 import { setSessionCookie } from "@/lib/auth/cookie";
 import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
+import {
+  checkLoginRateLimit,
+  clearLoginRateLimit,
+  getLoginRateLimitKey,
+  registerFailedLoginAttempt,
+} from "@/lib/auth/login-rate-limit";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { verifyPassword } from "@/lib/auth/password";
 import { authInputSchema } from "@/lib/auth/schemas";
@@ -29,6 +35,20 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
+    const rateLimitKey = getLoginRateLimitKey(request, parsed.data.email);
+    const rateLimitCheck = checkLoginRateLimit(rateLimitKey);
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        { message: "too many login attempts. please try again later" },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitCheck.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
     const user = await prisma.user.findUnique({
       where: {
         email: parsed.data.email,
@@ -41,6 +61,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     });
 
     if (!user) {
+      registerFailedLoginAttempt(rateLimitKey);
       return messageResponse("invalid credentials", 401);
     }
 
@@ -50,6 +71,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     );
 
     if (!passwordMatched) {
+      registerFailedLoginAttempt(rateLimitKey);
       return messageResponse("invalid credentials", 401);
     }
 
@@ -61,6 +83,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
     const response = NextResponse.json({ message: "ok" }, { status: 200 });
     setSessionCookie(response, token);
+    clearLoginRateLimit(rateLimitKey);
 
     return response;
   } catch (error: unknown) {
