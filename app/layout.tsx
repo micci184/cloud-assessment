@@ -18,11 +18,11 @@ export const metadata: Metadata = {
   description: "AWSカリキュラム向け理解度テストWebアプリ",
 };
 
-export default function RootLayout({
+const RootLayout = ({
   children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
+}>): React.ReactElement => {
   return (
     <html lang="ja">
       <body
@@ -44,4 +44,6 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+};
+
+export default RootLayout;

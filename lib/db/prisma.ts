@@ -7,7 +7,7 @@ const globalForPrisma = globalThis as unknown as {
   pool: Pool | undefined;
 };
 
-function getDatabaseUrl(): string {
+const getDatabaseUrl = (): string => {
   const databaseUrl = process.env["DATABASE_URL"];
 
   if (!databaseUrl) {
@@ -15,7 +15,7 @@ function getDatabaseUrl(): string {
   }
 
   return databaseUrl;
-}
+};
 
 const pool =
   globalForPrisma.pool ??

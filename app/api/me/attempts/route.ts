@@ -4,7 +4,7 @@ import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 
-export async function GET(request: Request): Promise<NextResponse> {
+export const GET = async (request: Request): Promise<NextResponse> => {
   try {
     const user = await getUserFromRequest(request);
 
@@ -43,4 +43,4 @@ export async function GET(request: Request): Promise<NextResponse> {
   } catch (error) {
     return internalServerErrorResponse(error);
   }
-}
+};

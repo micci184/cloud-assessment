@@ -1,4 +1,4 @@
-export function getAuthSecret(): string {
+export const getAuthSecret = (): string => {
   const authSecret = process.env["AUTH_SECRET"];
 
   if (!authSecret) {
@@ -6,4 +6,4 @@ export function getAuthSecret(): string {
   }
 
   return authSecret;
-}
+};

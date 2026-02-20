@@ -8,10 +8,10 @@ type RouteContext = {
   params: Promise<{ attemptId: string }>;
 };
 
-export async function GET(
+export const GET = async (
   request: Request,
   context: RouteContext,
-): Promise<NextResponse> {
+): Promise<NextResponse> => {
   try {
     const user = await getUserFromRequest(request);
 
@@ -90,4 +90,4 @@ export async function GET(
   } catch (error) {
     return internalServerErrorResponse(error);
   }
-}
+};

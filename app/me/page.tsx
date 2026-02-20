@@ -2,8 +2,10 @@ import { requireUser } from "@/lib/auth/guards";
 
 import { MeDashboard } from "./me-dashboard";
 
-export default async function MePage() {
+const MePage = async (): Promise<React.ReactElement> => {
   await requireUser();
 
   return <MeDashboard />;
-}
+};
+
+export default MePage;

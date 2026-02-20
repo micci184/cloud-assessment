@@ -15,7 +15,7 @@ type ScoringResult = {
   categoryBreakdown: CategoryScore[];
 };
 
-export function calculateScore(questions: ScoringQuestion[]): ScoringResult {
+export const calculateScore = (questions: ScoringQuestion[]): ScoringResult => {
   const total = questions.length;
 
   if (total === 0) {
@@ -53,4 +53,4 @@ export function calculateScore(questions: ScoringQuestion[]): ScoringResult {
   }));
 
   return { overallPercent, categoryBreakdown };
-}
+};

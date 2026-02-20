@@ -12,9 +12,9 @@ export type AuthUser = {
   tokenVersion: number;
 };
 
-async function findSessionUser(
+const findSessionUser = async (
   token: string | undefined,
-): Promise<AuthUser | null> {
+): Promise<AuthUser | null> => {
   if (!token) {
     return null;
   }
@@ -43,18 +43,18 @@ async function findSessionUser(
   }
 
   return user;
-}
+};
 
-export async function getCurrentUser(): Promise<AuthUser | null> {
+export const getCurrentUser = async (): Promise<AuthUser | null> => {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   return findSessionUser(sessionCookie);
-}
+};
 
-export async function getUserFromRequest(
+export const getUserFromRequest = async (
   request: Request,
-): Promise<AuthUser | null> {
+): Promise<AuthUser | null> => {
   const sessionCookie = request.headers
     .get("cookie")
     ?.split(";")
@@ -63,9 +63,9 @@ export async function getUserFromRequest(
     ?.slice(`${SESSION_COOKIE_NAME}=`.length);
 
   return findSessionUser(sessionCookie);
-}
+};
 
-export async function requireUser(): Promise<AuthUser> {
+export const requireUser = async (): Promise<AuthUser> => {
   const user = await getCurrentUser();
 
   if (!user) {
@@ -73,4 +73,4 @@ export async function requireUser(): Promise<AuthUser> {
   }
 
   return user;
-}
+};

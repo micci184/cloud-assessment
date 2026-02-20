@@ -4,16 +4,20 @@ import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
+import {
+  createAttemptFinalizedEvent,
+  logAttemptFinalizedEvent,
+} from "@/lib/logging/attempt-events";
 import { calculateScore } from "@/lib/quiz/scoring";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
 };
 
-export async function POST(
+export const POST = async (
   request: Request,
   context: RouteContext,
-): Promise<NextResponse> {
+): Promise<NextResponse> => {
   try {
     if (!isValidOrigin(request)) {
       return messageResponse("invalid origin", 403);
@@ -87,6 +91,14 @@ export async function POST(
       });
     });
 
+    const finalizedEvent = createAttemptFinalizedEvent({
+      attemptId,
+      userId: attempt.userId,
+      overallPercent: result.overallPercent,
+      categoryBreakdown,
+    });
+    logAttemptFinalizedEvent(finalizedEvent);
+
     return NextResponse.json({
       overallPercent: result.overallPercent,
       categoryBreakdown: result.categoryBreakdown,
@@ -94,4 +106,4 @@ export async function POST(
   } catch (error) {
     return internalServerErrorResponse(error);
   }
-}
+};
