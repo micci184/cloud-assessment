@@ -8,6 +8,7 @@ import {
   createAttemptFinalizedEvent,
   logAttemptFinalizedEvent,
 } from "@/lib/logging/attempt-events";
+import { deliverAttemptResultToNotion } from "@/lib/notion/delivery";
 import { calculateScore } from "@/lib/quiz/scoring";
 
 type RouteContext = {
@@ -72,13 +73,14 @@ export const POST = async (
     }));
 
     const { overallPercent, categoryBreakdown } = calculateScore(scoringData);
+    const completedAt = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
       await tx.attempt.update({
         where: { id: attemptId },
         data: {
           status: "COMPLETED",
-          completedAt: new Date(),
+          completedAt,
         },
       });
 
@@ -98,6 +100,34 @@ export const POST = async (
       categoryBreakdown,
     });
     logAttemptFinalizedEvent(finalizedEvent);
+
+    const notionDelivery = await deliverAttemptResultToNotion({
+      attemptId,
+      userId: attempt.userId,
+      status: "COMPLETED",
+      startedAt: attempt.startedAt,
+      completedAt,
+      overallPercent: result.overallPercent,
+      categoryBreakdown,
+    });
+    console.info(
+      JSON.stringify({
+        eventType: "notion_delivery_result",
+        attemptId,
+        status: notionDelivery.status,
+        ...(notionDelivery.status === "sent"
+          ? {
+              attempts: notionDelivery.attempts,
+              duplicate: notionDelivery.duplicate,
+            }
+          : notionDelivery.status === "failed"
+            ? {
+                attempts: notionDelivery.attempts,
+                errorMessage: notionDelivery.errorMessage,
+              }
+            : { reason: notionDelivery.reason }),
+      }),
+    );
 
     return NextResponse.json({
       overallPercent: result.overallPercent,
