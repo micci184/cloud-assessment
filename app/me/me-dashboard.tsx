@@ -48,7 +48,7 @@ type AttemptDetail = AttemptSummary & {
   questions: QuestionDetail[];
 };
 
-export function MeDashboard() {
+export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
   const [selectedAttempt, setSelectedAttempt] = useState<AttemptDetail | null>(null);
@@ -57,7 +57,7 @@ export function MeDashboard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    async function fetchAttempts() {
+    const fetchAttempts = async (): Promise<void> => {
       try {
         const response = await fetch("/api/me/attempts");
 
@@ -73,12 +73,12 @@ export function MeDashboard() {
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
     void fetchAttempts();
   }, []);
 
-  async function handleSelectAttempt(attemptId: string) {
+  const handleSelectAttempt = async (attemptId: string): Promise<void> => {
     setIsDetailLoading(true);
     setError("");
 
@@ -97,7 +97,7 @@ export function MeDashboard() {
     } finally {
       setIsDetailLoading(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -286,9 +286,9 @@ export function MeDashboard() {
       )}
     </div>
   );
-}
+};
 
-function AttemptDetailView({ attempt }: { attempt: AttemptDetail }) {
+const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
   const incorrectQuestions = attempt.questions.filter(
     (q) => q.isCorrect === false,
   );
@@ -411,9 +411,9 @@ function AttemptDetailView({ attempt }: { attempt: AttemptDetail }) {
       )}
     </section>
   );
-}
+};
 
-function formatDate(dateString: string | null): string {
+const formatDate = (dateString: string | null): string => {
   if (!dateString) return "";
 
   const date = new Date(dateString);
@@ -425,4 +425,4 @@ function formatDate(dateString: string | null): string {
     hour: "2-digit",
     minute: "2-digit",
   });
-}
+};

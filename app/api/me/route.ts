@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 
-export async function GET(request: Request): Promise<NextResponse> {
+export const GET = async (request: Request): Promise<NextResponse> => {
   try {
     const user = await getUserFromRequest(request);
 
@@ -21,4 +21,4 @@ export async function GET(request: Request): Promise<NextResponse> {
   } catch (error: unknown) {
     return internalServerErrorResponse(error);
   }
-}
+};

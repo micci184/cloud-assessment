@@ -1,4 +1,4 @@
-export function isValidOrigin(request: Request): boolean {
+export const isValidOrigin = (request: Request): boolean => {
   const origin = request.headers.get("origin");
 
   if (!origin) {
@@ -8,10 +8,10 @@ export function isValidOrigin(request: Request): boolean {
   const requestOrigin = new URL(request.url).origin;
 
   return origin === requestOrigin;
-}
+};
 
-export function isJsonContentType(request: Request): boolean {
+export const isJsonContentType = (request: Request): boolean => {
   const contentType = request.headers.get("content-type");
 
   return contentType?.includes("application/json") === true;
-}
+};

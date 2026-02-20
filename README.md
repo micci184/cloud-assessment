@@ -117,6 +117,7 @@ npm run db:studio    # Prisma Studio起動
 
 - [ERD (Mermaid)](./docs/erd.md)
 - [OpenAPI定義](./docs/openapi.yaml)
+- [イベントログ仕様](./docs/event-logging.md)
 
 ## 既知の制約
 

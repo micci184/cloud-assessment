@@ -14,7 +14,7 @@ const createAttemptSchema = z.object({
   count: z.number().int().min(1).max(50),
 });
 
-export async function POST(request: Request): Promise<NextResponse> {
+export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     if (!isValidOrigin(request)) {
       return messageResponse("invalid origin", 403);
@@ -83,4 +83,4 @@ export async function POST(request: Request): Promise<NextResponse> {
   } catch (error) {
     return internalServerErrorResponse(error);
   }
-}
+};

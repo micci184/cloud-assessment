@@ -5,7 +5,7 @@ import { useState } from "react";
 
 type Mode = "login" | "signup";
 
-export default function LoginPage() {
+const LoginPage = () => {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function validateForm(): string | null {
+  const validateForm = (): string | null => {
     if (!email.trim()) {
       return "メールアドレスを入力してください";
     }
@@ -27,9 +27,11 @@ export default function LoginPage() {
     }
 
     return null;
-  }
+  };
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
     event.preventDefault();
     setError("");
 
@@ -74,12 +76,12 @@ export default function LoginPage() {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
-  function toggleMode() {
+  const toggleMode = (): void => {
     setMode(mode === "login" ? "signup" : "login");
     setError("");
-  }
+  };
 
   return (
     <div className="flex items-center justify-center py-12">
@@ -176,4 +178,6 @@ export default function LoginPage() {
       </section>
     </div>
   );
-}
+};
+
+export default LoginPage;

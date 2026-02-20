@@ -9,7 +9,7 @@ type CategoryInfo = {
   count: number;
 };
 
-export function SelectForm() {
+export const SelectForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -20,7 +20,7 @@ export function SelectForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    async function fetchCategories() {
+    const fetchCategories = async (): Promise<void> => {
       try {
         const response = await fetch("/api/questions/categories");
 
@@ -36,30 +36,32 @@ export function SelectForm() {
       } finally {
         setIsLoading(false);
       }
-    }
+    };
 
     void fetchCategories();
   }, []);
 
-  function toggleCategory(category: string) {
+  const toggleCategory = (category: string): void => {
     setSelectedCategories((prev) =>
       prev.includes(category)
         ? prev.filter((c) => c !== category)
         : [...prev, category],
     );
     setError("");
-  }
+  };
 
-  function selectAllCategories() {
+  const selectAllCategories = (): void => {
     setSelectedCategories(categories.map((c) => c.category));
     setError("");
-  }
+  };
 
-  function deselectAllCategories() {
+  const deselectAllCategories = (): void => {
     setSelectedCategories([]);
-  }
+  };
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ): Promise<void> => {
     event.preventDefault();
     setError("");
 
@@ -99,7 +101,7 @@ export function SelectForm() {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -218,4 +220,4 @@ export function SelectForm() {
       </form>
     </section>
   );
-}
+};

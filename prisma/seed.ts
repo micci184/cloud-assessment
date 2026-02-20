@@ -348,7 +348,7 @@ const seedQuestions: SeedQuestion[] = [
   },
 ];
 
-async function main(): Promise<void> {
+const main = async (): Promise<void> => {
   await prisma.result.deleteMany();
   await prisma.attemptQuestion.deleteMany();
   await prisma.attempt.deleteMany();
@@ -375,7 +375,7 @@ async function main(): Promise<void> {
 
   console.log(`Seeded ${seedQuestions.length} questions.`);
   console.log("Category distribution:", categoryCount);
-}
+};
 
 main()
   .then(async () => {
