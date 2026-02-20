@@ -1,11 +1,11 @@
 import { SESSION_MAX_AGE_SECONDS } from "@/lib/auth/constants";
 import { signSession } from "@/lib/auth/session";
 
-export function createSessionToken(input: {
+export const createSessionToken = (input: {
   userId: string;
   tokenVersion: number;
   authSecret: string;
-}): string {
+}): string => {
   return signSession(
     {
       userId: input.userId,
@@ -14,4 +14,4 @@ export function createSessionToken(input: {
     },
     input.authSecret,
   );
-}
+};

@@ -42,7 +42,7 @@ type Props = {
   attemptId: string;
 };
 
-export function QuizRunner({ attemptId }: Props) {
+export const QuizRunner = ({ attemptId }: Props) => {
   const [attempt, setAttempt] = useState<AttemptData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
@@ -82,7 +82,7 @@ export function QuizRunner({ attemptId }: Props) {
     void fetchAttempt();
   }, [fetchAttempt]);
 
-  async function handleAnswer() {
+  const handleAnswer = async (): Promise<void> => {
     if (selectedChoice === null || !attempt) return;
 
     const currentQuestion = attempt.questions[currentIndex];
@@ -139,9 +139,9 @@ export function QuizRunner({ attemptId }: Props) {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
-  async function handleFinalize() {
+  const handleFinalize = async (): Promise<void> => {
     setIsSubmitting(true);
     setError("");
 
@@ -163,7 +163,7 @@ export function QuizRunner({ attemptId }: Props) {
     } finally {
       setIsSubmitting(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -349,9 +349,9 @@ export function QuizRunner({ attemptId }: Props) {
       </div>
     </div>
   );
-}
+};
 
-function ResultView({ attempt }: { attempt: AttemptData }) {
+const ResultView = ({ attempt }: { attempt: AttemptData }) => {
   const router = useRouter();
   const result = attempt.result;
 
@@ -493,4 +493,4 @@ function ResultView({ attempt }: { attempt: AttemptData }) {
       </div>
     </div>
   );
-}
+};

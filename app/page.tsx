@@ -1,4 +1,4 @@
-export default function Home() {
+const Home = () => {
   return (
     <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
       <h1 className="text-2xl font-bold">AWS理解度テスト MVP</h1>
@@ -35,4 +35,6 @@ export default function Home() {
       </ul>
     </section>
   );
-}
+};
+
+export default Home;

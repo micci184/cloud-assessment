@@ -14,10 +14,10 @@ type RouteContext = {
   params: Promise<{ attemptId: string }>;
 };
 
-export async function POST(
+export const POST = async (
   request: Request,
   context: RouteContext,
-): Promise<NextResponse> {
+): Promise<NextResponse> => {
   try {
     if (!isValidOrigin(request)) {
       return messageResponse("invalid origin", 403);
@@ -106,4 +106,4 @@ export async function POST(
   } catch (error) {
     return internalServerErrorResponse(error);
   }
-}
+};

@@ -8,10 +8,14 @@ type QuizPageProps = {
   }>;
 };
 
-export default async function QuizPage({ params }: QuizPageProps) {
+const QuizPage = async ({
+  params,
+}: QuizPageProps): Promise<React.ReactElement> => {
   await requireUser();
 
   const { attemptId } = await params;
 
   return <QuizRunner attemptId={attemptId} />;
-}
+};
+
+export default QuizPage;

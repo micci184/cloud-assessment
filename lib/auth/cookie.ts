@@ -2,7 +2,10 @@ import type { NextResponse } from "next/server";
 
 import { SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS } from "@/lib/auth/constants";
 
-export function setSessionCookie(response: NextResponse, token: string): void {
+export const setSessionCookie = (
+  response: NextResponse,
+  token: string,
+): void => {
   response.cookies.set(SESSION_COOKIE_NAME, token, {
     httpOnly: true,
     sameSite: "lax",
@@ -10,9 +13,9 @@ export function setSessionCookie(response: NextResponse, token: string): void {
     path: "/",
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
-}
+};
 
-export function clearSessionCookie(response: NextResponse): void {
+export const clearSessionCookie = (response: NextResponse): void => {
   response.cookies.set(SESSION_COOKIE_NAME, "", {
     httpOnly: true,
     sameSite: "lax",
@@ -20,4 +23,4 @@ export function clearSessionCookie(response: NextResponse): void {
     path: "/",
     maxAge: 0,
   });
-}
+};

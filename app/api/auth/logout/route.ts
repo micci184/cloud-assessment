@@ -5,7 +5,7 @@ import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse } from "@/lib/auth/http";
 import { isValidOrigin } from "@/lib/auth/origin";
 
-export async function POST(request: Request): Promise<NextResponse> {
+export const POST = async (request: Request): Promise<NextResponse> => {
   if (!isValidOrigin(request)) {
     return messageResponse("forbidden origin", 403);
   }
@@ -20,4 +20,4 @@ export async function POST(request: Request): Promise<NextResponse> {
   clearSessionCookie(response);
 
   return response;
-}
+};

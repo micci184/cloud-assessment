@@ -19,19 +19,19 @@ export type AttemptFinalizedEvent = {
   categoryBreakdown: CategoryBreakdownItem[];
 };
 
-function hashUserId(userId: string): string {
+const hashUserId = (userId: string): string => {
   return crypto
     .createHmac("sha256", getAuthSecret())
     .update(userId)
     .digest("hex");
-}
+};
 
-export function createAttemptFinalizedEvent(input: {
+export const createAttemptFinalizedEvent = (input: {
   attemptId: string;
   userId: string;
   overallPercent: number;
   categoryBreakdown: CategoryBreakdownItem[];
-}): AttemptFinalizedEvent {
+}): AttemptFinalizedEvent => {
   return {
     eventType: "attempt_finalized",
     timestamp: new Date().toISOString(),
@@ -41,8 +41,8 @@ export function createAttemptFinalizedEvent(input: {
     overallPercent: input.overallPercent,
     categoryBreakdown: input.categoryBreakdown,
   };
-}
+};
 
-export function logAttemptFinalizedEvent(event: AttemptFinalizedEvent): void {
+export const logAttemptFinalizedEvent = (event: AttemptFinalizedEvent): void => {
   console.info(JSON.stringify(event));
-}
+};
