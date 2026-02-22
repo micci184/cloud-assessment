@@ -81,29 +81,8 @@ export const createAttemptExportPayload = (
 
 export const createAttemptExportCsv = (payload: AttemptExportPayload): string => {
   const lines: string[] = [];
-
-  lines.push("section,key,value");
-  lines.push(`meta,attemptId,${escapeCsvValue(payload.attemptId)}`);
-  lines.push(`meta,status,${escapeCsvValue(payload.status)}`);
-  lines.push(`meta,startedAt,${escapeCsvValue(payload.startedAt)}`);
-  lines.push(`meta,completedAt,${escapeCsvValue(payload.completedAt)}`);
   lines.push(
-    `meta,overallPercent,${escapeCsvValue(payload.result?.overallPercent ?? null)}`,
-  );
-  lines.push(`meta,filters,${escapeCsvValue(JSON.stringify(payload.filters))}`);
-
-  if (payload.result?.categoryBreakdown) {
-    for (const item of payload.result.categoryBreakdown) {
-      lines.push(
-        `categoryBreakdown,${escapeCsvValue(item.category)},${escapeCsvValue(
-          `${item.correct}/${item.total} (${item.percent}%)`,
-        )}`,
-      );
-    }
-  }
-
-  lines.push(
-    "questions,order,category,level,questionText,selectedChoice,answerChoice,isCorrect,explanation",
+    "order,category,level,questionText,selectedChoice,answerChoice,isCorrect,explanation",
   );
 
   for (const question of payload.questions) {
@@ -115,7 +94,6 @@ export const createAttemptExportCsv = (payload: AttemptExportPayload): string =>
 
     lines.push(
       [
-        "question",
         escapeCsvValue(question.order),
         escapeCsvValue(question.category),
         escapeCsvValue(question.level),

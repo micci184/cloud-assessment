@@ -348,6 +348,7 @@ export const MeDashboard = () => {
               const deliveryState = deliveryStateMap[attempt.id];
               const exportState = exportStateMap[attempt.id];
               const canDeliver = attempt.status === "COMPLETED";
+              const canExport = attempt.status === "COMPLETED";
               const isExporting = exportState?.isExporting === true;
 
               return (
@@ -408,7 +409,7 @@ export const MeDashboard = () => {
                         onClick={() => {
                           void handleExportAttempt(attempt.id, "json");
                         }}
-                        disabled={isExporting}
+                        disabled={!canExport || isExporting}
                         aria-label={`受験 ${attempt.id} の結果をJSONでエクスポート`}
                         className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
                       >
@@ -419,7 +420,7 @@ export const MeDashboard = () => {
                         onClick={() => {
                           void handleExportAttempt(attempt.id, "csv");
                         }}
-                        disabled={isExporting}
+                        disabled={!canExport || isExporting}
                         aria-label={`受験 ${attempt.id} の結果をCSVでエクスポート`}
                         className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
                       >

@@ -66,6 +66,10 @@ export const GET = async (
       return messageResponse("forbidden", 403);
     }
 
+    if (attempt.status !== "COMPLETED" || !attempt.result) {
+      return messageResponse("attempt must be completed before export", 400);
+    }
+
     const payload = createAttemptExportPayload({
       attemptId: attempt.id,
       status: attempt.status,
@@ -76,17 +80,15 @@ export const GET = async (
         level?: number;
         count?: number;
       },
-      result: attempt.result
-        ? {
-            overallPercent: attempt.result.overallPercent,
-            categoryBreakdown: attempt.result.categoryBreakdown as {
-              category: string;
-              total: number;
-              correct: number;
-              percent: number;
-            }[],
-          }
-        : null,
+      result: {
+        overallPercent: attempt.result.overallPercent,
+        categoryBreakdown: attempt.result.categoryBreakdown as {
+          category: string;
+          total: number;
+          correct: number;
+          percent: number;
+        }[],
+      },
       questions: attempt.questions.map((question) => ({
         order: question.order,
         category: question.question.category,
