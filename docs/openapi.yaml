@@ -344,7 +344,7 @@ paths:
                   value:
                     status: failed
                     attempts: 3
-                    errorMessage: notion create page failed: status=503
+                    errorMessage: "notion create page failed: status=503"
 
 components:
   securitySchemes:
