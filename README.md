@@ -95,6 +95,23 @@ npm run dev
 | GET      | `/api/me/attempts/[attemptId]` | 受験履歴詳細 |
 | POST     | `/api/me/attempts/[attemptId]/deliver-notion` | 対象受験結果をNotionへ送信 |
 
+## Notion連携カラム設計
+
+`/api/me/attempts/[attemptId]/deliver-notion` で連携するNotion Databaseは、以下のカラム構成を推奨します。
+
+| カラム名 | 型 | 用途 |
+| --- | --- | --- |
+| `Category Breakdown JSON` | Rich text | カテゴリ別正答率（`category`, `correct`, `total`, `percent`）をJSON文字列で保存 |
+| `Questions JSON` | Rich text | 設問ごとの詳細（問題文、選択肢、正解番号、選択回答、正誤、解説）をJSON文字列で保存 |
+| `Source` | Select（`app` / `replay` / `manual`） | データ投入元の区別（通常運用は `app`） |
+| `Schema Version` | Rich text（またはSelect） | 連携データのスキーマバージョン（例: `1.0`）を保存 |
+
+補足:
+
+- `Category Breakdown JSON` と `Questions JSON` は、Notion上で構造化検索しやすいよう文字列化JSONとして保存します。
+- `Schema Version` は将来フォーマット変更時の後方互換対応に使います。
+- Notion APIの文字数制限に合わせ、Rich textは先頭2,000文字まで保存します。
+
 ## セキュリティ
 
 - **パスワード**: bcryptハッシュ（平文保存禁止） + サインアップ時は「8文字以上・英大文字/英小文字/数字を各1文字以上」
