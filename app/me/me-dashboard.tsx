@@ -404,6 +404,16 @@ export const MeDashboard = () => {
                   </button>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
                     <div className="flex flex-wrap items-center gap-2">
+                      {attempt.status === "IN_PROGRESS" && (
+                        <button
+                          type="button"
+                          onClick={() => router.push(`/quiz/${attempt.id}`)}
+                          aria-label={`進行中の受験 ${attempt.id} を再開`}
+                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                        >
+                          再開
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => {
