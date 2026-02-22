@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
@@ -9,6 +10,10 @@ import { prisma } from "@/lib/db/prisma";
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
 };
+
+const attemptParamsSchema = z.object({
+  attemptId: z.string().min(1),
+});
 
 const POST = async (
   request: Request,
@@ -25,17 +30,33 @@ const POST = async (
       return messageResponse("unauthorized", 401);
     }
 
-    const { attemptId } = await context.params;
+    const rawParams = await context.params;
+    const parsedParams = attemptParamsSchema.safeParse(rawParams);
+    if (!parsedParams.success) {
+      return messageResponse("invalid attempt id", 400);
+    }
+
+    const { attemptId } = parsedParams.data;
 
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },
       include: {
-        result: {
-          select: {
-            overallPercent: true,
-            categoryBreakdown: true,
+        questions: {
+          orderBy: { order: "asc" },
+          include: {
+            question: {
+              select: {
+                category: true,
+                level: true,
+                questionText: true,
+                choices: true,
+                answerIndex: true,
+                explanation: true,
+              },
+            },
           },
         },
+        result: true,
       },
     });
 
@@ -53,17 +74,25 @@ const POST = async (
 
     const deliveryResult = await deliverAttemptResultToNotion({
       attemptId: attempt.id,
-      userId: attempt.userId,
       status: attempt.status,
-      startedAt: attempt.startedAt,
-      completedAt: attempt.completedAt,
-      overallPercent: attempt.result.overallPercent,
-      categoryBreakdown: attempt.result.categoryBreakdown as Array<{
-        category: string;
-        total: number;
-        correct: number;
-        percent: number;
-      }>,
+      questions: attempt.questions.map((question) => {
+        const validatedChoices =
+          Array.isArray(question.question.choices) &&
+          question.question.choices.every((choice) => typeof choice === "string")
+            ? question.question.choices
+            : [];
+
+        return {
+          category: question.question.category,
+          level: question.question.level,
+          questionText: question.question.questionText,
+          choices: validatedChoices,
+          answerIndex: question.question.answerIndex,
+          selectedIndex: question.selectedIndex,
+          isCorrect: question.isCorrect,
+          explanation: question.question.explanation,
+        };
+      }),
     });
 
     if (deliveryResult.status === "failed") {

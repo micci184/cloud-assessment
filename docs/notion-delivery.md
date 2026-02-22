@@ -2,6 +2,23 @@
 
 `POST /api/me/attempts/[attemptId]/deliver-notion` を実行したときに、Notion Database へ受験結果を送信します。
 
+## Notion Database推奨カラム（Issue #42）
+
+以下の8カラムを使った「設問単位レコード」を推奨します。
+
+| Property Name | Type | Required | 説明 |
+| --- | --- | --- | --- |
+| `attempt id` | Rich text | Yes | Attempt識別子。同一受験の設問を束ねるキー |
+| `category` | Rich text | Yes | 問題カテゴリ |
+| `level` | Number | Yes | 難易度 |
+| `questionText` | Title | Yes | 問題文（Notion必須のTitleプロパティとして利用） |
+| `selectedChoice` | Rich text | Yes | ユーザーの選択肢テキスト |
+| `answerChoice` | Rich text | Yes | 正解選択肢テキスト |
+| `isCorrect` | Checkbox | Yes | 正誤 |
+| `explanation` | Rich text | Yes | 解説 |
+
+> 注: Notion DatabaseにはTitleプロパティが必須のため、`questionText` をTitle型で作成してください。
+
 ## 環境変数
 
 | Key | Required | Description |
@@ -14,8 +31,19 @@
 
 ## 冪等性
 
-- `Attempt ID` をキーとして、送信前に `databases/{id}/query` を実行
-- 既存ページが見つかった場合は新規作成せず `duplicate=true` として扱う
+- `attempt id` + `questionText` の組み合わせで重複判定
+- 既存レコードがある設問はスキップし、未登録設問のみ作成
+
+## アプリ -> Notion マッピング
+
+- `attempt id` <- `attempt.id`
+- `category` <- `question.category`
+- `level` <- `question.level`
+- `questionText` <- `question.questionText`
+- `selectedChoice` <- `question.choices[selectedIndex]`
+- `answerChoice` <- `question.choices[answerIndex]`
+- `isCorrect` <- `question.isCorrect`
+- `explanation` <- `question.explanation`
 
 ## 再送
 

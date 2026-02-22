@@ -1,17 +1,15 @@
-import { createAttemptFinalizedEvent } from "@/lib/logging/attempt-events";
-
 type NotionDeliveryInput = {
   attemptId: string;
-  userId: string;
   status: "IN_PROGRESS" | "COMPLETED";
-  startedAt: Date;
-  completedAt: Date | null;
-  overallPercent: number;
-  categoryBreakdown: Array<{
+  questions: Array<{
     category: string;
-    total: number;
-    correct: number;
-    percent: number;
+    level: number;
+    questionText: string;
+    choices: string[];
+    answerIndex: number;
+    selectedIndex: number | null;
+    isCorrect: boolean | null;
+    explanation: string;
   }>;
 };
 
@@ -28,9 +26,7 @@ type NotionDeliveryResult =
   | { status: "skipped"; reason: "missing_config" }
   | { status: "failed"; attempts: number; errorMessage: string };
 
-type NotionQueryResponse = {
-  results?: Array<{ id: string }>;
-};
+type NotionQueryResponse = { results?: Array<{ id: string }> };
 
 const getOptionalEnv = (key: string): string | undefined => {
   const value = process.env[key]?.trim();
@@ -130,19 +126,30 @@ const notionRequest = async <TResponse>(
   return { ok: true, status: response.status, data };
 };
 
-const findAttemptInNotion = async (
+const findQuestionRowInNotion = async (
   config: NotionConfig,
   attemptId: string,
+  questionText: string,
 ): Promise<boolean> => {
   const response = await notionRequest<NotionQueryResponse>(
     config,
     `/databases/${config.databaseId}/query`,
     {
       filter: {
-        property: "Attempt ID",
-        title: {
-          equals: attemptId,
-        },
+        and: [
+          {
+            property: "attempt id",
+            rich_text: {
+              equals: attemptId,
+            },
+          },
+          {
+            property: "questionText",
+            title: {
+              equals: questionText.slice(0, 2000),
+            },
+          },
+        ],
       },
       page_size: 1,
     },
@@ -155,16 +162,14 @@ const findAttemptInNotion = async (
   return (response.data?.results?.length ?? 0) > 0;
 };
 
-const createNotionPage = async (
+const createQuestionRow = async (
   config: NotionConfig,
-  input: NotionDeliveryInput,
+  attemptId: string,
+  question: NotionDeliveryInput["questions"][number],
 ): Promise<void> => {
-  const event = createAttemptFinalizedEvent({
-    attemptId: input.attemptId,
-    userId: input.userId,
-    overallPercent: input.overallPercent,
-    categoryBreakdown: input.categoryBreakdown,
-  });
+  const selectedChoice =
+    question.selectedIndex === null ? "" : (question.choices[question.selectedIndex] ?? "");
+  const answerChoice = question.choices[question.answerIndex] ?? "";
 
   const response = await notionRequest(
     config,
@@ -172,29 +177,29 @@ const createNotionPage = async (
     {
       parent: { database_id: config.databaseId },
       properties: {
-        "Attempt ID": {
-          title: toRichText(input.attemptId),
+        "attempt id": {
+          rich_text: toRichText(attemptId),
         },
-        Status: {
-          select: { name: input.status },
+        category: {
+          rich_text: toRichText(question.category),
         },
-        "Started At": {
-          date: { start: input.startedAt.toISOString() },
+        level: {
+          number: question.level,
         },
-        "Completed At": {
-          date: input.completedAt ? { start: input.completedAt.toISOString() } : null,
+        questionText: {
+          title: toRichText(question.questionText),
         },
-        "Overall Percent": {
-          number: input.overallPercent,
+        selectedChoice: {
+          rich_text: toRichText(selectedChoice),
         },
-        "User Hash": {
-          rich_text: toRichText(event.userIdHash),
+        answerChoice: {
+          rich_text: toRichText(answerChoice),
         },
-        "Category Breakdown JSON": {
-          rich_text: toRichText(JSON.stringify(input.categoryBreakdown)),
+        isCorrect: {
+          checkbox: question.isCorrect === true,
         },
-        "Schema Version": {
-          rich_text: toRichText(event.schemaVersion),
+        explanation: {
+          rich_text: toRichText(question.explanation),
         },
       },
     },
@@ -203,6 +208,30 @@ const createNotionPage = async (
   if (!response.ok) {
     throw new Error(`notion create page failed: status=${response.status}`);
   }
+};
+
+const syncQuestionRows = async (
+  config: NotionConfig,
+  input: NotionDeliveryInput,
+): Promise<number> => {
+  let createdCount = 0;
+
+  for (const question of input.questions) {
+    const exists = await findQuestionRowInNotion(
+      config,
+      input.attemptId,
+      question.questionText,
+    );
+
+    if (exists) {
+      continue;
+    }
+
+    await createQuestionRow(config, input.attemptId, question);
+    createdCount += 1;
+  }
+
+  return createdCount;
 };
 
 export const deliverAttemptResultToNotion = async (
@@ -222,13 +251,8 @@ export const deliverAttemptResultToNotion = async (
     attempts += 1;
 
     try {
-      const exists = await findAttemptInNotion(config, input.attemptId);
-      if (exists) {
-        return { status: "sent", attempts, duplicate: true };
-      }
-
-      await createNotionPage(config, input);
-      return { status: "sent", attempts, duplicate: false };
+      const createdCount = await syncQuestionRows(config, input);
+      return { status: "sent", attempts, duplicate: createdCount === 0 };
     } catch (error: unknown) {
       const message = safeErrorMessage(error);
       lastErrorMessage = message;

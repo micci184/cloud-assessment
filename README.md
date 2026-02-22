@@ -95,6 +95,26 @@ npm run dev
 | GET      | `/api/me/attempts/[attemptId]` | 受験履歴詳細 |
 | POST     | `/api/me/attempts/[attemptId]/deliver-notion` | 対象受験結果をNotionへ送信 |
 
+## Notion連携カラム設計
+
+`/api/me/attempts/[attemptId]/deliver-notion` で連携するNotion Databaseは、以下のカラム構成を推奨します。
+
+| カラム名 | 型 | 用途 |
+| --- | --- | --- |
+| `attempt id` | Rich text | Attempt識別子（同一受験の設問を束ねるキー） |
+| `category` | Rich text | 問題カテゴリ |
+| `level` | Number | 難易度 |
+| `questionText` | Title | 問題文（Notion必須のTitleプロパティ） |
+| `selectedChoice` | Rich text | ユーザーが選択した選択肢テキスト |
+| `answerChoice` | Rich text | 正解の選択肢テキスト |
+| `isCorrect` | Checkbox | 正誤 |
+| `explanation` | Rich text | 問題の解説 |
+
+補足:
+
+- Notion DatabaseはTitleプロパティ必須のため、`questionText` をTitle型にしてください。
+- Notion連携は受験（Attempt）単位ではなく、設問（Question）単位で1行ずつ保存します。
+
 ## セキュリティ
 
 - **パスワード**: bcryptハッシュ（平文保存禁止） + サインアップ時は「8文字以上・英大文字/英小文字/数字を各1文字以上」
