@@ -4,8 +4,11 @@ type NotionDeliveryInput = {
   attemptId: string;
   userId: string;
   status: "IN_PROGRESS" | "COMPLETED";
+  createdAt: Date;
+  updatedAt: Date;
   startedAt: Date;
   completedAt: Date | null;
+  categories: string[];
   overallPercent: number;
   categoryBreakdown: Array<{
     category: string;
@@ -13,6 +16,18 @@ type NotionDeliveryInput = {
     correct: number;
     percent: number;
   }>;
+  questions: Array<{
+    order: number;
+    category: string;
+    level: number;
+    questionText: string;
+    choices: string[];
+    answerIndex: number;
+    selectedIndex: number | null;
+    isCorrect: boolean | null;
+    explanation: string;
+  }>;
+  source: "app" | "replay" | "manual";
 };
 
 type NotionConfig = {
@@ -106,6 +121,27 @@ const toRichText = (value: string) => {
   ];
 };
 
+const toMultiSelect = (values: string[]) => {
+  const uniqueValues = Array.from(new Set(values)).slice(0, 100);
+  return uniqueValues.map((value) => ({ name: value.slice(0, 100) }));
+};
+
+const createQuestionsJson = (questions: NotionDeliveryInput["questions"]): string => {
+  return JSON.stringify(
+    questions.map((question) => ({
+      order: question.order,
+      category: question.category,
+      level: question.level,
+      questionText: question.questionText,
+      choices: question.choices,
+      answerIndex: question.answerIndex,
+      selectedIndex: question.selectedIndex,
+      isCorrect: question.isCorrect,
+      explanation: question.explanation,
+    })),
+  );
+};
+
 const notionRequest = async <TResponse>(
   config: NotionConfig,
   path: string,
@@ -184,8 +220,11 @@ const createNotionPage = async (
         "Completed At": {
           date: input.completedAt ? { start: input.completedAt.toISOString() } : null,
         },
-        "Overall Percent": {
+        "Overall %": {
           number: input.overallPercent,
+        },
+        Categories: {
+          multi_select: toMultiSelect(input.categories),
         },
         "User Hash": {
           rich_text: toRichText(event.userIdHash),
@@ -193,8 +232,20 @@ const createNotionPage = async (
         "Category Breakdown JSON": {
           rich_text: toRichText(JSON.stringify(input.categoryBreakdown)),
         },
+        "Questions JSON": {
+          rich_text: toRichText(createQuestionsJson(input.questions)),
+        },
+        Source: {
+          select: { name: input.source },
+        },
         "Schema Version": {
           rich_text: toRichText(event.schemaVersion),
+        },
+        "Created At (App)": {
+          date: { start: input.createdAt.toISOString() },
+        },
+        "Updated At (App)": {
+          date: { start: input.updatedAt.toISOString() },
         },
       },
     },

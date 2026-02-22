@@ -30,6 +30,21 @@ const POST = async (
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },
       include: {
+        questions: {
+          orderBy: { order: "asc" },
+          include: {
+            question: {
+              select: {
+                category: true,
+                level: true,
+                questionText: true,
+                choices: true,
+                answerIndex: true,
+                explanation: true,
+              },
+            },
+          },
+        },
         result: {
           select: {
             overallPercent: true,
@@ -51,12 +66,26 @@ const POST = async (
       return messageResponse("attempt must be completed before delivery", 400);
     }
 
+    const filterCategories = (() => {
+      const rawFilters = attempt.filters as { categories?: unknown } | null;
+      if (!rawFilters || !Array.isArray(rawFilters.categories)) {
+        return [] as string[];
+      }
+
+      return rawFilters.categories.filter(
+        (category): category is string => typeof category === "string" && category.length > 0,
+      );
+    })();
+
     const deliveryResult = await deliverAttemptResultToNotion({
       attemptId: attempt.id,
       userId: attempt.userId,
       status: attempt.status,
+      createdAt: attempt.createdAt,
+      updatedAt: attempt.updatedAt,
       startedAt: attempt.startedAt,
       completedAt: attempt.completedAt,
+      categories: filterCategories,
       overallPercent: attempt.result.overallPercent,
       categoryBreakdown: attempt.result.categoryBreakdown as Array<{
         category: string;
@@ -64,6 +93,18 @@ const POST = async (
         correct: number;
         percent: number;
       }>,
+      questions: attempt.questions.map((question) => ({
+        order: question.order,
+        category: question.question.category,
+        level: question.question.level,
+        questionText: question.question.questionText,
+        choices: question.question.choices as string[],
+        answerIndex: question.question.answerIndex,
+        selectedIndex: question.selectedIndex,
+        isCorrect: question.isCorrect,
+        explanation: question.question.explanation,
+      })),
+      source: "app",
     });
 
     if (deliveryResult.status === "failed") {
