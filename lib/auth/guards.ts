@@ -53,14 +53,11 @@ export const getCurrentUser = async (): Promise<AuthUser | null> => {
 };
 
 export const getUserFromRequest = async (
-  request: Request,
+  _request: Request,
 ): Promise<AuthUser | null> => {
-  const sessionCookie = request.headers
-    .get("cookie")
-    ?.split(";")
-    .map((item) => item.trim())
-    .find((item) => item.startsWith(`${SESSION_COOKIE_NAME}=`))
-    ?.slice(`${SESSION_COOKIE_NAME}=`.length);
+  void _request;
+  const cookieStore = await cookies();
+  const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   return findSessionUser(sessionCookie);
 };
