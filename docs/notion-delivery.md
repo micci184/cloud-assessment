@@ -4,25 +4,20 @@
 
 ## Notion Database推奨カラム（Issue #42）
 
-以下のプロパティ名・型でDatabaseを作成してください。
+以下の8カラムを使った「設問単位レコード」を推奨します。
 
 | Property Name | Type | Required | 説明 |
 | --- | --- | --- | --- |
-| `Attempt ID` | Title | Yes | Attemptの一意キー（冪等判定に使用） |
-| `User Hash` | Rich text | Yes | userIdをハッシュ化した識別子 |
-| `Status` | Select (`IN_PROGRESS`, `COMPLETED`) | Yes | Attempt状態 |
-| `Overall %` | Number | Yes | 総合正答率 |
-| `Started At` | Date | Yes | 受験開始日時 |
-| `Completed At` | Date | No | 受験完了日時 |
-| `Categories` | Multi-select | Yes | 出題カテゴリ一覧 |
-| `Category Breakdown JSON` | Rich text | Yes | カテゴリ別正答率のJSON |
-| `Questions JSON` | Rich text | Yes | 設問ごとの詳細JSON |
-| `Source` | Select (`app`, `replay`, `manual`) | Yes | 送信元 |
-| `Schema Version` | Rich text | Yes | スキーマバージョン（例: `1.0`） |
-| `Created At (App)` | Date | Yes | Attempt作成日時 |
-| `Updated At (App)` | Date | Yes | Attempt更新日時 |
+| `attempt id` | Rich text | Yes | Attempt識別子。同一受験の設問を束ねるキー |
+| `category` | Rich text | Yes | 問題カテゴリ |
+| `level` | Number | Yes | 難易度 |
+| `questionText` | Title | Yes | 問題文（Notion必須のTitleプロパティとして利用） |
+| `selectedChoice` | Rich text | Yes | ユーザーの選択肢テキスト |
+| `answerChoice` | Rich text | Yes | 正解選択肢テキスト |
+| `isCorrect` | Checkbox | Yes | 正誤 |
+| `explanation` | Rich text | Yes | 解説 |
 
-> 注: `Questions JSON` / `Category Breakdown JSON` はNotionの文字数制限に合わせて先頭2,000文字まで保存されます。
+> 注: Notion DatabaseにはTitleプロパティが必須のため、`questionText` をTitle型で作成してください。
 
 ## 環境変数
 
@@ -36,24 +31,19 @@
 
 ## 冪等性
 
-- `Attempt ID` をキーとして、送信前に `databases/{id}/query` を実行
-- 既存ページが見つかった場合は新規作成せず `duplicate=true` として扱う
+- `attempt id` + `questionText` の組み合わせで重複判定
+- 既存レコードがある設問はスキップし、未登録設問のみ作成
 
 ## アプリ -> Notion マッピング
 
-- `Attempt ID` <- `attempt.id`
-- `User Hash` <- `createAttemptFinalizedEvent(...).userIdHash`
-- `Status` <- `attempt.status`
-- `Overall %` <- `result.overallPercent`
-- `Started At` <- `attempt.startedAt`
-- `Completed At` <- `attempt.completedAt`
-- `Categories` <- `attempt.filters.categories`
-- `Category Breakdown JSON` <- `result.categoryBreakdown`
-- `Questions JSON` <- `attempt.questions`（order/category/level/questionText/choices/answerIndex/selectedIndex/isCorrect/explanation）
-- `Source` <- 固定値 `app`（将来 `replay` / `manual` を想定）
-- `Schema Version` <- `createAttemptFinalizedEvent(...).schemaVersion`
-- `Created At (App)` <- `attempt.createdAt`
-- `Updated At (App)` <- `attempt.updatedAt`
+- `attempt id` <- `attempt.id`
+- `category` <- `question.category`
+- `level` <- `question.level`
+- `questionText` <- `question.questionText`
+- `selectedChoice` <- `question.choices[selectedIndex]`
+- `answerChoice` <- `question.choices[answerIndex]`
+- `isCorrect` <- `question.isCorrect`
+- `explanation` <- `question.explanation`
 
 ## 再送
 

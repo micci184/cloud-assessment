@@ -45,12 +45,7 @@ const POST = async (
             },
           },
         },
-        result: {
-          select: {
-            overallPercent: true,
-            categoryBreakdown: true,
-          },
-        },
+        result: true,
       },
     });
 
@@ -66,35 +61,10 @@ const POST = async (
       return messageResponse("attempt must be completed before delivery", 400);
     }
 
-    const filterCategories = (() => {
-      const rawFilters = attempt.filters as { categories?: unknown } | null;
-      if (!rawFilters || !Array.isArray(rawFilters.categories)) {
-        return [] as string[];
-      }
-
-      return rawFilters.categories.filter(
-        (category): category is string => typeof category === "string" && category.length > 0,
-      );
-    })();
-
     const deliveryResult = await deliverAttemptResultToNotion({
       attemptId: attempt.id,
-      userId: attempt.userId,
       status: attempt.status,
-      createdAt: attempt.createdAt,
-      updatedAt: attempt.updatedAt,
-      startedAt: attempt.startedAt,
-      completedAt: attempt.completedAt,
-      categories: filterCategories,
-      overallPercent: attempt.result.overallPercent,
-      categoryBreakdown: attempt.result.categoryBreakdown as Array<{
-        category: string;
-        total: number;
-        correct: number;
-        percent: number;
-      }>,
       questions: attempt.questions.map((question) => ({
-        order: question.order,
         category: question.question.category,
         level: question.question.level,
         questionText: question.question.questionText,
@@ -104,7 +74,6 @@ const POST = async (
         isCorrect: question.isCorrect,
         explanation: question.question.explanation,
       })),
-      source: "app",
     });
 
     if (deliveryResult.status === "failed") {

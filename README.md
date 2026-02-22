@@ -101,16 +101,19 @@ npm run dev
 
 | カラム名 | 型 | 用途 |
 | --- | --- | --- |
-| `Category Breakdown JSON` | Rich text | カテゴリ別正答率（`category`, `correct`, `total`, `percent`）をJSON文字列で保存 |
-| `Questions JSON` | Rich text | 設問ごとの詳細（問題文、選択肢、正解番号、選択回答、正誤、解説）をJSON文字列で保存 |
-| `Source` | Select（`app` / `replay` / `manual`） | データ投入元の区別（通常運用は `app`） |
-| `Schema Version` | Rich text（またはSelect） | 連携データのスキーマバージョン（例: `1.0`）を保存 |
+| `attempt id` | Rich text | Attempt識別子（同一受験の設問を束ねるキー） |
+| `category` | Rich text | 問題カテゴリ |
+| `level` | Number | 難易度 |
+| `questionText` | Title | 問題文（Notion必須のTitleプロパティ） |
+| `selectedChoice` | Rich text | ユーザーが選択した選択肢テキスト |
+| `answerChoice` | Rich text | 正解の選択肢テキスト |
+| `isCorrect` | Checkbox | 正誤 |
+| `explanation` | Rich text | 問題の解説 |
 
 補足:
 
-- `Category Breakdown JSON` と `Questions JSON` は、Notion上で構造化検索しやすいよう文字列化JSONとして保存します。
-- `Schema Version` は将来フォーマット変更時の後方互換対応に使います。
-- Notion APIの文字数制限に合わせ、Rich textは先頭2,000文字まで保存します。
+- Notion DatabaseはTitleプロパティ必須のため、`questionText` をTitle型にしてください。
+- Notion連携は受験（Attempt）単位ではなく、設問（Question）単位で1行ずつ保存します。
 
 ## セキュリティ
 
