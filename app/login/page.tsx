@@ -29,6 +29,12 @@ const LoginPage = () => {
     emailInputRef.current?.focus();
   }, [mode]);
 
+  useEffect(() => {
+    if (errors.form) {
+      formErrorRef.current?.focus();
+    }
+  }, [errors.form]);
+
   const validateForm = (): FieldErrors => {
     if (!email.trim()) {
       return { email: "メールアドレスを入力してください" };
@@ -97,7 +103,6 @@ const LoginPage = () => {
           });
         }
 
-        formErrorRef.current?.focus();
         return;
       }
 
@@ -106,7 +111,6 @@ const LoginPage = () => {
       setErrors({
         form: "通信に失敗しました。ネットワーク接続を確認してください",
       });
-      formErrorRef.current?.focus();
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +128,7 @@ const LoginPage = () => {
           {mode === "login" ? "ログイン" : "アカウント作成"}
         </h1>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
           <div>
             <label
               htmlFor="email"
