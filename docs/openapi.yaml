@@ -279,8 +279,19 @@ paths:
       tags: [Me]
       summary: Notionへ受験結果を送信
       description: |
-        指定Attempt（完了済み）をNotion Databaseへ送信する。
-        冪等性により、既に送信済みの場合は重複作成せず `duplicate: true` を返す。
+        指定Attempt（完了済み）の設問を Notion Database へ送信する（設問単位で1行作成）。
+        Notion DB は以下の8カラム構成を前提とする。
+        - `attempt id` (Rich text)
+        - `category` (Rich text)
+        - `level` (Number)
+        - `questionText` (Title)
+        - `selectedChoice` (Rich text)
+        - `answerChoice` (Rich text)
+        - `isCorrect` (Checkbox)
+        - `explanation` (Rich text)
+
+        冪等性は `attempt id` + `questionText` の組み合わせで判定し、
+        既存の設問行は再作成しない。全設問が既存の場合は `duplicate: true` を返す。
       security:
         - cookieAuth: []
       parameters:
@@ -304,7 +315,7 @@ paths:
                     attempts: 1
                     duplicate: false
                 duplicate:
-                  summary: 既送信のためスキップ
+                  summary: 全設問が既存で新規作成なし
                   value:
                     status: sent
                     attempts: 1
@@ -625,7 +636,7 @@ components:
           description: 送信を試みた回数
         duplicate:
           type: boolean
-          description: 既に同一AttemptがNotionに存在する場合はtrue
+          description: 対象設問がすべて既存で新規作成がなかった場合はtrue
         reason:
           type: string
           description: skipped時の理由
