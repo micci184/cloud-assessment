@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type QuestionData = {
   attemptQuestionId: string;
@@ -49,6 +49,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const choiceButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const questionNavButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const questionTitleRef = useRef<HTMLHeadingElement>(null);
 
   const fetchAttempt = useCallback(async () => {
     try {
@@ -81,6 +84,10 @@ export const QuizRunner = ({ attemptId }: Props) => {
   useEffect(() => {
     void fetchAttempt();
   }, [fetchAttempt]);
+
+  useEffect(() => {
+    questionTitleRef.current?.focus();
+  }, [currentIndex]);
 
   const handleAnswer = async (): Promise<void> => {
     if (selectedChoice === null || !attempt) return;
@@ -165,6 +172,90 @@ export const QuizRunner = ({ attemptId }: Props) => {
     }
   };
 
+  const handleChoiceKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    choiceIndex: number,
+    choiceCount: number,
+    canAnswer: boolean,
+  ): void => {
+    if (!canAnswer) {
+      return;
+    }
+
+    if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const nextIndex = (choiceIndex + 1) % choiceCount;
+      setSelectedChoice(nextIndex);
+      choiceButtonRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      const prevIndex = (choiceIndex - 1 + choiceCount) % choiceCount;
+      setSelectedChoice(prevIndex);
+      choiceButtonRefs.current[prevIndex]?.focus();
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      setSelectedChoice(0);
+      choiceButtonRefs.current[0]?.focus();
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      const lastIndex = choiceCount - 1;
+      setSelectedChoice(lastIndex);
+      choiceButtonRefs.current[lastIndex]?.focus();
+    }
+  };
+
+  const moveQuestionByKeyboard = (nextIndex: number): void => {
+    if (!attempt) {
+      return;
+    }
+
+    const clampedIndex = Math.max(0, Math.min(nextIndex, attempt.questions.length - 1));
+    setCurrentIndex(clampedIndex);
+    setSelectedChoice(null);
+    questionNavButtonRefs.current[clampedIndex]?.focus();
+  };
+
+  const handleQuestionNavKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    questionIndex: number,
+  ): void => {
+    if (!attempt) {
+      return;
+    }
+
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      moveQuestionByKeyboard(questionIndex + 1);
+      return;
+    }
+
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      moveQuestionByKeyboard(questionIndex - 1);
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      moveQuestionByKeyboard(0);
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      moveQuestionByKeyboard(attempt.questions.length - 1);
+    }
+  };
+
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
@@ -227,13 +318,23 @@ export const QuizRunner = ({ attemptId }: Props) => {
           </span>
         </div>
 
-        <h2 className="mb-6 text-lg font-medium leading-relaxed">
+        <h2
+          ref={questionTitleRef}
+          tabIndex={-1}
+          className="mb-6 text-lg font-medium leading-relaxed outline-none"
+        >
           {currentQuestion.question.questionText}
         </h2>
 
-        <div className="flex flex-col gap-3">
+        <div
+          role="radiogroup"
+          aria-label={`問題 ${currentIndex + 1} の選択肢`}
+          className="flex flex-col gap-3"
+        >
           {(currentQuestion.question.choices as string[]).map(
             (choice, index) => {
+              const canAnswer =
+                currentQuestion.selectedIndex === null && !isSubmitting;
               const isSelected =
                 selectedChoice === index ||
                 (currentQuestion.selectedIndex === index &&
@@ -243,14 +344,26 @@ export const QuizRunner = ({ attemptId }: Props) => {
                 <button
                   key={index}
                   type="button"
+                  ref={(element) => {
+                    choiceButtonRefs.current[index] = element;
+                  }}
                   onClick={() => {
                     if (currentQuestion.selectedIndex === null) {
                       setSelectedChoice(index);
                     }
                   }}
-                  disabled={
-                    currentQuestion.selectedIndex !== null || isSubmitting
-                  }
+                  onKeyDown={(event) => {
+                    handleChoiceKeyDown(
+                      event,
+                      index,
+                      currentQuestion.question.choices.length,
+                      canAnswer,
+                    );
+                  }}
+                  role="radio"
+                  aria-checked={isSelected}
+                  aria-disabled={!canAnswer}
+                  disabled={!canAnswer}
                   className={`rounded-lg border px-4 py-3 text-left text-sm transition ${
                     isSelected
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
@@ -326,15 +439,27 @@ export const QuizRunner = ({ attemptId }: Props) => {
       </section>
 
       {/* 問題ナビゲーション */}
-      <div className="flex flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label="問題ナビゲーション"
+        className="flex flex-wrap gap-2"
+      >
         {attempt.questions.map((q, i) => (
           <button
             key={q.attemptQuestionId}
             type="button"
+            ref={(element) => {
+              questionNavButtonRefs.current[i] = element;
+            }}
             onClick={() => {
               setCurrentIndex(i);
               setSelectedChoice(null);
             }}
+            onKeyDown={(event) => {
+              handleQuestionNavKeyDown(event, i);
+            }}
+            aria-current={i === currentIndex ? "true" : undefined}
+            aria-label={`問題 ${q.order}${q.selectedIndex !== null ? "（回答済み）" : "（未回答）"}`}
             className={`h-8 w-8 rounded text-xs font-medium transition ${
               i === currentIndex
                 ? "bg-blue-600 text-white dark:bg-blue-500"
