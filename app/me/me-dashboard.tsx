@@ -54,6 +54,12 @@ type NotionDeliveryState = {
   kind: "success" | "error" | null;
 };
 
+type ExportState = {
+  isExporting: boolean;
+  message: string;
+  kind: "success" | "error" | null;
+};
+
 export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -64,6 +70,7 @@ export const MeDashboard = () => {
   const [deliveryStateMap, setDeliveryStateMap] = useState<
     Record<string, NotionDeliveryState>
   >({});
+  const [exportStateMap, setExportStateMap] = useState<Record<string, ExportState>>({});
 
   useEffect(() => {
     const fetchAttempts = async (): Promise<void> => {
@@ -160,6 +167,68 @@ export const MeDashboard = () => {
         ...prev,
         [attemptId]: {
           isSending: false,
+          message: "通信に失敗しました",
+          kind: "error",
+        },
+      }));
+    }
+  };
+
+  const handleExportAttempt = async (
+    attemptId: string,
+    format: "csv" | "json",
+  ): Promise<void> => {
+    setExportStateMap((prev) => ({
+      ...prev,
+      [attemptId]: {
+        isExporting: true,
+        message: "",
+        kind: null,
+      },
+    }));
+
+    try {
+      const response = await fetch(
+        `/api/me/attempts/${attemptId}/export?format=${format}`,
+      );
+
+      if (!response.ok) {
+        const data = (await response.json()) as { message?: string };
+        setExportStateMap((prev) => ({
+          ...prev,
+          [attemptId]: {
+            isExporting: false,
+            message: data.message ?? "エクスポートに失敗しました",
+            kind: "error",
+          },
+        }));
+        return;
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const extension = format === "csv" ? "csv" : "json";
+      link.href = objectUrl;
+      link.download = `attempt-${attemptId}.${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      setExportStateMap((prev) => ({
+        ...prev,
+        [attemptId]: {
+          isExporting: false,
+          message: `${format.toUpperCase()}をダウンロードしました`,
+          kind: "success",
+        },
+      }));
+    } catch {
+      setExportStateMap((prev) => ({
+        ...prev,
+        [attemptId]: {
+          isExporting: false,
           message: "通信に失敗しました",
           kind: "error",
         },
@@ -277,7 +346,10 @@ export const MeDashboard = () => {
             {attempts.map((attempt) => {
               const filters = attempt.filters as AttemptFilters;
               const deliveryState = deliveryStateMap[attempt.id];
+              const exportState = exportStateMap[attempt.id];
               const canDeliver = attempt.status === "COMPLETED";
+              const canExport = attempt.status === "COMPLETED";
+              const isExporting = exportState?.isExporting === true;
 
               return (
                 <div
@@ -330,30 +402,67 @@ export const MeDashboard = () => {
                     )}
                   </div>
                   </button>
-                  <div className="mt-3 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        void handleDeliverToNotion(attempt.id);
-                      }}
-                      disabled={!canDeliver || deliveryState?.isSending === true}
-                      className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
-                    >
-                      {deliveryState?.isSending === true
-                        ? "送信中..."
-                        : "Notionへ送信"}
-                    </button>
-                    {deliveryState?.message && (
-                      <span
-                        className={`text-xs ${
-                          deliveryState.kind === "success"
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleExportAttempt(attempt.id, "json");
+                        }}
+                        disabled={!canExport || isExporting}
+                        aria-label={`受験 ${attempt.id} の結果をJSONでエクスポート`}
+                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
                       >
-                        {deliveryState.message}
-                      </span>
-                    )}
+                        {isExporting ? "出力中..." : "JSON出力"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleExportAttempt(attempt.id, "csv");
+                        }}
+                        disabled={!canExport || isExporting}
+                        aria-label={`受験 ${attempt.id} の結果をCSVでエクスポート`}
+                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                      >
+                        {isExporting ? "出力中..." : "CSV出力"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleDeliverToNotion(attempt.id);
+                        }}
+                        disabled={!canDeliver || deliveryState?.isSending === true}
+                        className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                      >
+                        {deliveryState?.isSending === true
+                          ? "送信中..."
+                          : "Notionへ送信"}
+                      </button>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      {exportState?.message && (
+                        <span
+                          className={`text-xs ${
+                            exportState.kind === "success"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {exportState.message}
+                        </span>
+                      )}
+                      {deliveryState?.message && (
+                        <span
+                          className={`text-xs ${
+                            deliveryState.kind === "success"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {deliveryState.message}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
