@@ -13,6 +13,12 @@ export const HeaderNav = (): React.ReactElement => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
+    if (isLoginPage) {
+      setIsAuthenticated(false);
+      setIsLoadingAuth(false);
+      return;
+    }
+
     setIsLoadingAuth(true);
     const fetchMe = async (): Promise<void> => {
       try {
@@ -26,7 +32,7 @@ export const HeaderNav = (): React.ReactElement => {
     };
 
     void fetchMe();
-  }, [pathname]);
+  }, [pathname, isLoginPage]);
 
   const handleLogout = async (): Promise<void> => {
     setIsLoggingOut(true);
