@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { HeaderNav } from "./header-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,11 +34,7 @@ const RootLayout = ({
             <Link href="/" className="text-sm font-semibold tracking-wide">
               Cloud Assessment
             </Link>
-            <nav className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-300">
-              <Link href="/login">Login</Link>
-              <Link href="/select">Select</Link>
-              <Link href="/me">Me</Link>
-            </nav>
+            <HeaderNav />
           </header>
           <main className="flex-1">{children}</main>
         </div>
