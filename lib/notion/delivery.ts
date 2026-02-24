@@ -16,6 +16,7 @@ type NotionDeliveryInput = {
 type NotionConfig = {
   apiKey: string;
   databaseId: string;
+  titlePropertyName: string;
   maxRetries: number;
   retryDelayMs: number;
   timeoutMs: number;
@@ -57,6 +58,7 @@ const getNotionConfig = (): NotionConfig | null => {
   return {
     apiKey,
     databaseId,
+    titlePropertyName: getOptionalEnv("NOTION_TITLE_PROPERTY_NAME") ?? "Name",
     maxRetries: parsePositiveInt(
       getOptionalEnv("NOTION_DELIVERY_MAX_RETRIES"),
       3,
@@ -129,7 +131,7 @@ const notionRequest = async <TResponse>(
 const findQuestionRowInNotion = async (
   config: NotionConfig,
   attemptId: string,
-  questionText: string,
+  question: NotionDeliveryInput["questions"][number],
 ): Promise<boolean> => {
   const response = await notionRequest<NotionQueryResponse>(
     config,
@@ -144,9 +146,21 @@ const findQuestionRowInNotion = async (
             },
           },
           {
+            property: "category",
+            rich_text: {
+              equals: question.category.slice(0, 2000),
+            },
+          },
+          {
+            property: "level",
+            number: {
+              equals: question.level,
+            },
+          },
+          {
             property: "questionText",
-            title: {
-              equals: questionText.slice(0, 2000),
+            rich_text: {
+              equals: question.questionText.slice(0, 2000),
             },
           },
         ],
@@ -177,6 +191,9 @@ const createQuestionRow = async (
     {
       parent: { database_id: config.databaseId },
       properties: {
+        [config.titlePropertyName]: {
+          title: toRichText(question.questionText),
+        },
         "attempt id": {
           rich_text: toRichText(attemptId),
         },
@@ -187,7 +204,7 @@ const createQuestionRow = async (
           number: question.level,
         },
         questionText: {
-          title: toRichText(question.questionText),
+          rich_text: toRichText(question.questionText),
         },
         selectedChoice: {
           rich_text: toRichText(selectedChoice),
@@ -217,11 +234,7 @@ const syncQuestionRows = async (
   let createdCount = 0;
 
   for (const question of input.questions) {
-    const exists = await findQuestionRowInNotion(
-      config,
-      input.attemptId,
-      question.questionText,
-    );
+    const exists = await findQuestionRowInNotion(config, input.attemptId, question);
 
     if (exists) {
       continue;
