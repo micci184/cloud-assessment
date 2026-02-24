@@ -49,6 +49,42 @@ npm run dev
 
 起動後: [http://localhost:3000](http://localhost:3000)
 
+## 問題データのCSV取り込み（短期対応）
+
+問題拡充を seed のTS直書きではなくCSV運用で行うため、CLIインポートを用意しています。
+
+```bash
+# 既定ファイル(data/questions.csv)を取り込む
+npm run import:questions
+
+# 簡易サンプルCSVを取り込む
+npm run import:questions -- data/questions.sample.csv
+
+# 任意パスのCSVを取り込む
+npm run import:questions -- ./path/to/questions.csv
+```
+
+### CSVカラム仕様
+
+| カラム名 | 型/形式 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `category` | 文字列 | Yes | 問題カテゴリ（例: `S3`, `IAM`） |
+| `level` | 数値（`1`〜`3`） | Yes | 難易度 |
+| `questionText` | 文字列 | Yes | 問題文 |
+| `choice1` | 文字列 | Yes | 選択肢1 |
+| `choice2` | 文字列 | Yes | 選択肢2 |
+| `choice3` | 文字列 | Yes | 選択肢3 |
+| `choice4` | 文字列 | Yes | 選択肢4 |
+| `answerIndex` | 数値（`0`〜`3`） | Yes | 正解の選択肢インデックス（`choice1=0`） |
+| `explanation` | 文字列 | Yes | 解説文 |
+
+補足:
+
+- 既定CSVは `data/questions.csv` です。
+- 同一CSV内で `category + level + questionText` が重複している行はエラーになります。
+- DB上の同一キー（`category + level + questionText`）は更新、未存在は新規作成されます。
+- 必須欠落や `answerIndex` 範囲外などの不正行は、行番号付きでエラー表示されます。
+
 ## 動作確認手順
 
 1. `/login` でアカウント作成（新規登録）
@@ -135,6 +171,7 @@ npm run db:generate  # Prisma Client生成
 npm run db:migrate   # マイグレーション実行
 npm run db:seed      # Seedデータ投入
 npm run db:studio    # Prisma Studio起動
+npm run import:questions # CSVから問題を登録/更新
 ```
 
 ## 設計ドキュメント

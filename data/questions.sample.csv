@@ -1,0 +1,3 @@
+category,level,questionText,choice1,choice2,choice3,choice4,answerIndex,explanation
+S3,1,S3で暗号化設定として一般的に使われる機能はどれですか？,Server-Side Encryption,Security Group,NAT Gateway,Auto Scaling,0,S3の保存データ暗号化にはServer-Side Encryptionを利用します。
+IAM,2,最小権限の原則に最も合う運用はどれですか？,全権限付与,必要最小限の権限のみ付与,アクセスキー共有,監査ログ無効化,1,最小権限では業務に必要な権限だけを付与します。
