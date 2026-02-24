@@ -8,16 +8,16 @@
 
 | Property Name | Type | Required | 説明 |
 | --- | --- | --- | --- |
-| `attempt id` | Rich text | Yes | Attempt識別子。同一受験の設問を束ねるキー |
-| `category` | Rich text | Yes | 問題カテゴリ |
+| `attempt id` | Text | Yes | Attempt識別子。同一受験の設問を束ねるキー |
+| `category` | Text | Yes | 問題カテゴリ |
 | `level` | Number | Yes | 難易度 |
-| `questionText` | Title | Yes | 問題文（Notion必須のTitleプロパティとして利用） |
-| `selectedChoice` | Rich text | Yes | ユーザーの選択肢テキスト |
-| `answerChoice` | Rich text | Yes | 正解選択肢テキスト |
+| `questionText` | Text | Yes | 問題文 |
+| `selectedChoice` | Text | Yes | ユーザーの選択肢テキスト |
+| `answerChoice` | Text | Yes | 正解選択肢テキスト |
 | `isCorrect` | Checkbox | Yes | 正誤 |
-| `explanation` | Rich text | Yes | 解説 |
+| `explanation` | Text | Yes | 解説 |
 
-> 注: Notion DatabaseにはTitleプロパティが必須のため、`questionText` をTitle型で作成してください。
+> 注: Notion DatabaseにはTitleプロパティが必須です。上記8カラムとは別に、Title列を1つ作成し、`NOTION_TITLE_PROPERTY_NAME`（デフォルト: `Name`）にその列名を設定してください。
 
 ## 環境変数
 
@@ -25,13 +25,14 @@
 | --- | --- | --- |
 | `NOTION_API_KEY` | Yes | Notion Integration Token |
 | `NOTION_DATABASE_ID` | Yes | 書き込み先Database ID |
+| `NOTION_TITLE_PROPERTY_NAME` | No | NotionのTitle列プロパティ名（デフォルト: `Name`） |
 | `NOTION_DELIVERY_MAX_RETRIES` | No | 再送回数（デフォルト: `3`） |
 | `NOTION_DELIVERY_RETRY_DELAY_MS` | No | 初回リトライ待機時間ms（指数バックオフ） |
 | `NOTION_DELIVERY_TIMEOUT_MS` | No | Notion APIタイムアウトms（デフォルト: `5000`） |
 
 ## 冪等性
 
-- `attempt id` + `questionText` の組み合わせで重複判定
+- `attempt id` + `category` + `level` + `questionText` の組み合わせで重複判定
 - 既存レコードがある設問はスキップし、未登録設問のみ作成
 
 ## アプリ -> Notion マッピング

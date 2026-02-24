@@ -101,18 +101,18 @@ npm run dev
 
 | カラム名 | 型 | 用途 |
 | --- | --- | --- |
-| `attempt id` | Rich text | Attempt識別子（同一受験の設問を束ねるキー） |
-| `category` | Rich text | 問題カテゴリ |
+| `attempt id` | Text | Attempt識別子（同一受験の設問を束ねるキー） |
+| `category` | Text | 問題カテゴリ |
 | `level` | Number | 難易度 |
-| `questionText` | Title | 問題文（Notion必須のTitleプロパティ） |
-| `selectedChoice` | Rich text | ユーザーが選択した選択肢テキスト |
-| `answerChoice` | Rich text | 正解の選択肢テキスト |
+| `questionText` | Text | 問題文 |
+| `selectedChoice` | Text | ユーザーが選択した選択肢テキスト |
+| `answerChoice` | Text | 正解の選択肢テキスト |
 | `isCorrect` | Checkbox | 正誤 |
-| `explanation` | Rich text | 問題の解説 |
+| `explanation` | Text | 問題の解説 |
 
 補足:
 
-- Notion DatabaseはTitleプロパティ必須のため、`questionText` をTitle型にしてください。
+- Notion DatabaseはTitleプロパティ必須です。8カラムとは別にTitle列を1つ用意し、`.env` の `NOTION_TITLE_PROPERTY_NAME`（デフォルト: `Name`）にその列名を設定してください。
 - Notion連携は受験（Attempt）単位ではなく、設問（Question）単位で1行ずつ保存します。
 
 ## セキュリティ

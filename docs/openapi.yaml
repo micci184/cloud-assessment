@@ -281,16 +281,19 @@ paths:
       description: |
         指定Attempt（完了済み）の設問を Notion Database へ送信する（設問単位で1行作成）。
         Notion DB は以下の8カラム構成を前提とする。
-        - `attempt id` (Rich text)
-        - `category` (Rich text)
+        - `attempt id` (Text)
+        - `category` (Text)
         - `level` (Number)
-        - `questionText` (Title)
-        - `selectedChoice` (Rich text)
-        - `answerChoice` (Rich text)
+        - `questionText` (Text)
+        - `selectedChoice` (Text)
+        - `answerChoice` (Text)
         - `isCorrect` (Checkbox)
-        - `explanation` (Rich text)
+        - `explanation` (Text)
 
-        冪等性は `attempt id` + `questionText` の組み合わせで判定し、
+        なお Notion Database の仕様上、別途 Title 列が1つ必要。
+        その列名は `NOTION_TITLE_PROPERTY_NAME`（デフォルト: `Name`）で指定する。
+
+        冪等性は `attempt id` + `category` + `level` + `questionText` の組み合わせで判定し、
         既存の設問行は再作成しない。全設問が既存の場合は `duplicate: true` を返す。
       security:
         - cookieAuth: []
