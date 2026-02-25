@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin } from "@/lib/auth/origin";
@@ -75,13 +76,21 @@ export const POST = async (
     const completedAt = new Date();
 
     const result = await prisma.$transaction(async (tx) => {
-      await tx.attempt.update({
-        where: { id: attemptId },
+      const updatedAttempt = await tx.attempt.updateMany({
+        where: {
+          id: attemptId,
+          userId: user.id,
+          status: "IN_PROGRESS",
+        },
         data: {
           status: "COMPLETED",
           completedAt,
         },
       });
+
+      if (updatedAttempt.count === 0) {
+        return null;
+      }
 
       return tx.result.create({
         data: {
@@ -91,6 +100,10 @@ export const POST = async (
         },
       });
     });
+
+    if (!result) {
+      return messageResponse("この試験は既に採点済みです", 400);
+    }
 
     const finalizedEvent = createAttemptFinalizedEvent({
       attemptId,
@@ -105,6 +118,13 @@ export const POST = async (
       categoryBreakdown: result.categoryBreakdown,
     });
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return messageResponse("この試験は既に採点済みです", 409);
+    }
+
     return internalServerErrorResponse(error);
   }
 };
