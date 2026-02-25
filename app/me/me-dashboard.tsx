@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type CategoryScore = {
   category: string;
@@ -71,6 +71,7 @@ export const MeDashboard = () => {
     Record<string, NotionDeliveryState>
   >({});
   const [exportStateMap, setExportStateMap] = useState<Record<string, ExportState>>({});
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     const fetchAttempts = async (): Promise<void> => {
@@ -93,6 +94,12 @@ export const MeDashboard = () => {
 
     void fetchAttempts();
   }, []);
+
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    }
+  }, [error]);
 
   const handleSelectAttempt = async (attemptId: string): Promise<void> => {
     setIsDetailLoading(true);
@@ -258,7 +265,13 @@ export const MeDashboard = () => {
       <h1 className="text-2xl font-semibold">マイページ</h1>
 
       {error && (
-        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+        <p
+          ref={errorRef}
+          tabIndex={-1}
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 outline-none dark:bg-red-900/20 dark:text-red-400"
+        >
           {error}
         </p>
       )}

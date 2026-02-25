@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type CategoryInfo = {
   category: string;
@@ -18,6 +18,7 @@ export const SelectForm = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
     const fetchCategories = async (): Promise<void> => {
@@ -40,6 +41,12 @@ export const SelectForm = () => {
 
     void fetchCategories();
   }, []);
+
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    }
+  }, [error]);
 
   const toggleCategory = (category: string): void => {
     setSelectedCategories((prev) =>
@@ -205,7 +212,13 @@ export const SelectForm = () => {
         </div>
 
         {error && (
-          <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <p
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            aria-live="assertive"
+            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 outline-none dark:bg-red-900/20 dark:text-red-400"
+          >
             {error}
           </p>
         )}
