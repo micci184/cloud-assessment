@@ -79,6 +79,8 @@ type MeProfile = {
   email: string;
 };
 
+type MeTabKey = "summary" | "history";
+
 export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -88,11 +90,13 @@ export const MeDashboard = () => {
   const [error, setError] = useState("");
   const [stats, setStats] = useState<MeStats | null>(null);
   const [profile, setProfile] = useState<MeProfile | null>(null);
+  const [activeTab, setActiveTab] = useState<MeTabKey>("summary");
   const [deliveryStateMap, setDeliveryStateMap] = useState<
     Record<string, NotionDeliveryState>
   >({});
   const [exportStateMap, setExportStateMap] = useState<Record<string, ExportState>>({});
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   useEffect(() => {
     const fetchDashboardData = async (): Promise<void> => {
@@ -282,6 +286,63 @@ export const MeDashboard = () => {
     }
   };
 
+  const tabs: Array<{ key: MeTabKey; label: string }> = [
+    { key: "summary", label: "学習サマリー" },
+    { key: "history", label: "学習履歴" },
+  ];
+
+  const handleTabKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ): void => {
+    const lastIndex = tabs.length - 1;
+
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      const nextIndex = currentIndex === lastIndex ? 0 : currentIndex + 1;
+      const nextTab = tabs[nextIndex];
+      if (!nextTab) {
+        return;
+      }
+      setActiveTab(nextTab.key);
+      tabRefs.current[nextIndex]?.focus();
+      return;
+    }
+
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      const prevIndex = currentIndex === 0 ? lastIndex : currentIndex - 1;
+      const prevTab = tabs[prevIndex];
+      if (!prevTab) {
+        return;
+      }
+      setActiveTab(prevTab.key);
+      tabRefs.current[prevIndex]?.focus();
+      return;
+    }
+
+    if (event.key === "Home") {
+      event.preventDefault();
+      const firstTab = tabs[0];
+      if (!firstTab) {
+        return;
+      }
+      setActiveTab(firstTab.key);
+      tabRefs.current[0]?.focus();
+      return;
+    }
+
+    if (event.key === "End") {
+      event.preventDefault();
+      const lastTab = tabs[lastIndex];
+      if (!lastTab) {
+        return;
+      }
+      setActiveTab(lastTab.key);
+      tabRefs.current[lastIndex]?.focus();
+    }
+  };
+
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
@@ -318,7 +379,36 @@ export const MeDashboard = () => {
         </p>
       )}
 
-      {profile && stats && (
+      <section className="w-fit rounded-full border border-black/10 bg-white p-1 dark:border-white/15 dark:bg-black/50">
+        <div role="tablist" aria-label="マイページ表示切り替え" className="flex gap-1">
+          {tabs.map((tab, index) => (
+            <button
+              key={tab.key}
+              ref={(element) => {
+                tabRefs.current[index] = element;
+              }}
+              type="button"
+              role="tab"
+              id={`me-tab-${tab.key}`}
+              aria-controls={`me-panel-${tab.key}`}
+              aria-selected={activeTab === tab.key}
+              tabIndex={activeTab === tab.key ? 0 : -1}
+              onClick={() => setActiveTab(tab.key)}
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
+              className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                activeTab === tab.key
+                  ? "bg-blue-600 text-white dark:bg-blue-500"
+                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {activeTab === "summary" && profile && stats && (
+        <div id="me-panel-summary" role="tabpanel" aria-labelledby="me-tab-summary" className="space-y-6">
         <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
@@ -354,7 +444,6 @@ export const MeDashboard = () => {
             </button>
           </div>
         </section>
-      )}
 
       {stats && (
         <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -366,6 +455,10 @@ export const MeDashboard = () => {
           />
           <SummaryCard label="連続学習" value={`${stats.streakDays}日`} />
         </section>
+      )}
+
+      {stats && stats.weeklyActivity.length > 0 && (
+        <WeeklyActivityChart items={stats.weeklyActivity} />
       )}
 
       {/* 直近スコアサマリ */}
@@ -454,8 +547,12 @@ export const MeDashboard = () => {
           </div>
         </section>
       )}
+      </div>
+      )}
 
       {/* 履歴一覧 */}
+      {activeTab === "history" && (
+      <div id="me-panel-history" role="tabpanel" aria-labelledby="me-tab-history" className="space-y-6">
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
         <h2 className="mb-4 text-lg font-semibold">受験履歴</h2>
 
@@ -633,7 +730,48 @@ export const MeDashboard = () => {
           新しいテストを受ける
         </button>
       )}
+      </div>
+      )}
     </div>
+  );
+};
+
+const WeeklyActivityChart = ({
+  items,
+}: {
+  items: Array<{ date: string; count: number }>;
+}) => {
+  const maxCount = Math.max(...items.map((item) => item.count), 1);
+
+  return (
+    <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+      <h2 className="mb-1 text-lg font-semibold">週間アクティビティ</h2>
+      <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+        直近7日間の回答数
+      </p>
+      <div className="grid grid-cols-7 gap-2">
+        {items.map((item) => {
+          const barHeight = Math.max(10, Math.round((item.count / maxCount) * 90));
+
+          return (
+            <div key={item.date} className="flex flex-col items-center gap-1">
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                {item.count}
+              </span>
+              <div className="flex h-24 items-end">
+                <div
+                  className="w-8 rounded-md bg-teal-600/85 dark:bg-teal-500/80"
+                  style={{ height: `${barHeight}%` }}
+                />
+              </div>
+              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                {formatWeekday(item.date)}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </section>
   );
 };
 
@@ -777,6 +915,11 @@ const SummaryCard = ({
       </p>
     </article>
   );
+};
+
+const formatWeekday = (dateString: string): string => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("ja-JP", { weekday: "short" });
 };
 
 const formatDate = (dateString: string | null): string => {
