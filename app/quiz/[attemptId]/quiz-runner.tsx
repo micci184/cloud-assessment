@@ -315,7 +315,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
         <div
-          className="h-full rounded-full bg-blue-500 transition-all"
+          className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
           style={{
             width: `${(attempt.questions.filter((q) => q.selectedIndex !== null).length / attempt.questions.length) * 100}%`,
           }}
@@ -381,7 +381,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
                   disabled={!canAnswer}
                   className={`rounded-lg border px-4 py-3 text-left text-sm transition ${
                     isSelected
-                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                      ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                       : "border-neutral-300 text-neutral-700 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-300 dark:hover:border-neutral-500"
                   } disabled:cursor-not-allowed disabled:opacity-70`}
                 >
@@ -440,7 +440,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
               type="button"
               onClick={handleAnswer}
               disabled={selectedChoice === null || isSubmitting}
-              className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="rounded-lg bg-brand-300 px-6 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               {isSubmitting ? "送信中..." : "回答する"}
             </button>
@@ -483,7 +483,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
             aria-label={`問題 ${q.order}${q.selectedIndex !== null ? "（回答済み）" : "（未回答）"}`}
             className={`h-8 w-8 rounded text-xs font-medium transition ${
               i === currentIndex
-                ? "bg-blue-600 text-white dark:bg-blue-500"
+                ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
                 : q.selectedIndex !== null
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
@@ -514,7 +514,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
         </p>
 
         <div className="mb-8 text-center">
-          <span className="text-5xl font-bold text-blue-600 dark:text-blue-400">
+          <span className="text-5xl font-bold text-brand-600 dark:text-brand-300">
             {result.overallPercent}
           </span>
           <span className="ml-1 text-2xl text-neutral-500">%</span>
@@ -533,7 +533,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
               <div className="flex-1">
                 <div className="h-3 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                   <div
-                    className="h-full rounded-full bg-blue-500 transition-all"
+                    className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
                     style={{ width: `${cat.percent}%` }}
                   />
                 </div>
@@ -625,7 +625,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
         <button
           type="button"
           onClick={() => router.push("/select")}
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="rounded-lg bg-brand-300 px-6 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
         >
           もう一度テストする
         </button>

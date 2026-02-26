@@ -414,7 +414,7 @@ export const MeDashboard = () => {
           aria-labelledby="me-tab-summary"
           className="space-y-6"
         >
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-[2fr_1fr]">
+          <section className="grid grid-cols-1 gap-4">
             <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -509,10 +509,13 @@ export const MeDashboard = () => {
                 </div>
                 <button
                   type="button"
-                  onClick={() => handleSelectAttempt(latestCompleted.id)}
+                  onClick={() => {
+                    setActiveTab("history");
+                    void handleSelectAttempt(latestCompleted.id);
+                  }}
                   className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-200 dark:hover:border-neutral-500"
                 >
-                  詳細を見る
+                  履歴で詳細を確認
                 </button>
               </article>
             ) : (
@@ -541,7 +544,7 @@ export const MeDashboard = () => {
             <button
               type="button"
               onClick={() => router.push("/select")}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="rounded-lg bg-brand-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               テストを受ける
             </button>
@@ -561,7 +564,7 @@ export const MeDashboard = () => {
                   key={attempt.id}
                   className={`w-full rounded-lg border px-4 py-3 text-left ${
                     selectedAttempt?.id === attempt.id
-                      ? "border-blue-500 bg-blue-50/50 dark:border-blue-400 dark:bg-blue-900/10"
+                      ? "border-brand-400 bg-brand-200/40 dark:border-brand-300 dark:bg-brand-400/10"
                       : "border-neutral-200 dark:border-neutral-700"
                   }`}
                 >
@@ -586,7 +589,7 @@ export const MeDashboard = () => {
                       </span>
                     </div>
                     {attempt.result && (
-                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="text-sm font-semibold text-brand-600 dark:text-brand-300">
                         {attempt.result.overallPercent}%
                       </span>
                     )}
@@ -614,7 +617,7 @@ export const MeDashboard = () => {
                           type="button"
                           onClick={() => router.push(`/quiz/${attempt.id}`)}
                           aria-label={`進行中の受験 ${attempt.id} を再開`}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                          className="rounded-lg bg-brand-300 px-3 py-1.5 text-xs font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
                         >
                           再開
                         </button>
@@ -702,7 +705,7 @@ export const MeDashboard = () => {
         <button
           type="button"
           onClick={() => router.push("/select")}
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="rounded-lg bg-brand-300 px-6 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
         >
           新しいテストを受ける
         </button>
@@ -775,7 +778,7 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
       <h2 className="text-lg font-semibold">
         テスト詳細
         {attempt.result && (
-          <span className="ml-2 text-blue-600 dark:text-blue-400">
+          <span className="ml-2 text-brand-600 dark:text-brand-300">
             {attempt.result.overallPercent}%
           </span>
         )}
@@ -796,7 +799,7 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
                 <div className="flex-1">
                   <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                     <div
-                      className="h-full rounded-full bg-blue-500 transition-all"
+                      className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
                       style={{ width: `${cat.percent}%` }}
                     />
                   </div>

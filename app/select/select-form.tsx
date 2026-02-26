@@ -144,7 +144,7 @@ export const SelectForm = () => {
                   ? "カテゴリの全選択を解除"
                   : "カテゴリをすべて選択"
               }
-              className="text-xs text-blue-600 hover:underline dark:text-blue-400"
+              className="text-xs text-brand-600 hover:underline dark:text-brand-300"
             >
               {isAllSelected ? "すべて解除" : "すべて選択"}
             </button>
@@ -162,7 +162,7 @@ export const SelectForm = () => {
                   aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
                   className={`rounded-lg border px-3 py-1.5 text-sm transition ${
                     isSelected
-                      ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                      ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                       : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
                   }`}
                   disabled={isSubmitting}
@@ -190,7 +190,7 @@ export const SelectForm = () => {
                 aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
                   level === l
-                    ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
+                    ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                     : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
                 }`}
                 disabled={isSubmitting}
@@ -216,7 +216,7 @@ export const SelectForm = () => {
             max={50}
             value={count}
             onChange={(event) => setCount(Number(event.target.value))}
-            className="w-24 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+            className="w-24 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
             disabled={isSubmitting}
           />
         </div>
@@ -236,7 +236,7 @@ export const SelectForm = () => {
         <button
           type="submit"
           disabled={isSubmitting || selectedCategories.length === 0}
-          className="rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
         >
           {isSubmitting ? "作成中..." : "テストを開始"}
         </button>
