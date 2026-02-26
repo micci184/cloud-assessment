@@ -642,6 +642,7 @@ components:
           bestPercent,
           streakDays,
           totalAnswered,
+          recent7DaysAnswered,
           weeklyActivity,
           activityHeatmap,
           categoryProgress,
@@ -663,6 +664,9 @@ components:
           type: integer
           minimum: 0
         totalAnswered:
+          type: integer
+          minimum: 0
+        recent7DaysAnswered:
           type: integer
           minimum: 0
         weeklyActivity:
