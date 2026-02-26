@@ -138,12 +138,18 @@ export const SelectForm = () => {
             <button
               type="button"
               onClick={isAllSelected ? deselectAllCategories : selectAllCategories}
+              aria-pressed={isAllSelected}
+              aria-label={
+                isAllSelected
+                  ? "カテゴリの全選択を解除"
+                  : "カテゴリをすべて選択"
+              }
               className="text-xs text-blue-600 hover:underline dark:text-blue-400"
             >
               {isAllSelected ? "すべて解除" : "すべて選択"}
             </button>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div role="group" aria-label="カテゴリ選択" className="flex flex-wrap gap-2">
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.category);
 
@@ -152,6 +158,8 @@ export const SelectForm = () => {
                   key={cat.category}
                   type="button"
                   onClick={() => toggleCategory(cat.category)}
+                  aria-pressed={isSelected}
+                  aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
                   className={`rounded-lg border px-3 py-1.5 text-sm transition ${
                     isSelected
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
@@ -172,12 +180,14 @@ export const SelectForm = () => {
           <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
             レベル
           </label>
-          <div className="flex gap-2">
+          <div role="group" aria-label="レベル選択" className="flex gap-2">
             {[1, 2, 3].map((l) => (
               <button
                 key={l}
                 type="button"
                 onClick={() => setLevel(l)}
+                aria-pressed={level === l}
+                aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
                 className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
                   level === l
                     ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-900/30 dark:text-blue-300"
