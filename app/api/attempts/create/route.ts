@@ -14,6 +14,20 @@ const createAttemptSchema = z.object({
   count: z.number().int().min(1).max(50),
 });
 
+const shuffleInPlace = <T>(items: T[]): T[] => {
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [
+      shuffled[randomIndex],
+      shuffled[index],
+    ];
+  }
+
+  return shuffled;
+};
+
 export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     if (!isValidOrigin(request)) {
@@ -57,7 +71,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
-    const shuffled = questions.sort(() => Math.random() - 0.5);
+    const shuffled = shuffleInPlace(questions);
     const selected = shuffled.slice(0, count);
 
     const attempt = await prisma.$transaction(async (tx) => {
