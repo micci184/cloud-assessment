@@ -143,7 +143,7 @@ const LoginPage = () => {
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="example@email.com"
-              className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+              className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
               aria-invalid={Boolean(errors.email)}
               aria-describedby={errors.email ? "email-error" : undefined}
               required
@@ -173,7 +173,7 @@ const LoginPage = () => {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               placeholder="8文字以上"
-              className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-neutral-600 dark:focus:border-blue-400 dark:focus:ring-blue-400/20"
+              className="w-full rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
               aria-invalid={Boolean(errors.password)}
               aria-describedby={
                 mode === "signup"
@@ -223,7 +223,7 @@ const LoginPage = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="mt-2 rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-blue-500 dark:hover:bg-blue-600"
+            className="mt-2 rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
           >
             {isSubmitting
               ? "処理中..."
@@ -240,7 +240,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={toggleMode}
-                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                className="font-medium text-brand-600 hover:underline dark:text-brand-300"
               >
                 新規登録
               </button>
@@ -251,7 +251,7 @@ const LoginPage = () => {
               <button
                 type="button"
                 onClick={toggleMode}
-                className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                className="font-medium text-brand-600 hover:underline dark:text-brand-300"
               >
                 ログイン
               </button>

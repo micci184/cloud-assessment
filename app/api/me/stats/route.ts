@@ -35,13 +35,15 @@ const calculateStreakDays = (activityDates: Date[]): number => {
   return streakDays;
 };
 
-const createWeeklyActivityBuckets = (): Array<{ date: string; count: number }> => {
+const createActivityBuckets = (
+  days: number,
+): Array<{ date: string; count: number }> => {
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
 
-  return Array.from({ length: 7 }).map((_, index) => {
+  return Array.from({ length: days }).map((_, index) => {
     const date = new Date(today);
-    date.setUTCDate(today.getUTCDate() - (6 - index));
+    date.setUTCDate(today.getUTCDate() - (days - 1 - index));
     return {
       date: toDateKey(date),
       count: 0,
@@ -162,15 +164,25 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       .filter((answeredAt): answeredAt is Date => answeredAt instanceof Date);
     const streakDays = calculateStreakDays(allAnsweredAt);
 
-    const weeklyActivity = createWeeklyActivityBuckets();
+    const weeklyActivity = createActivityBuckets(7);
     const weeklyActivityMap = new Map(
       weeklyActivity.map((item) => [item.date, item]),
     );
+
+    const activityHeatmap = createActivityBuckets(365);
+    const activityHeatmapMap = new Map(
+      activityHeatmap.map((item) => [item.date, item]),
+    );
+
     for (const answeredAt of allAnsweredAt) {
       const key = toDateKey(answeredAt);
-      const bucket = weeklyActivityMap.get(key);
-      if (bucket) {
-        bucket.count += 1;
+      const weeklyBucket = weeklyActivityMap.get(key);
+      if (weeklyBucket) {
+        weeklyBucket.count += 1;
+      }
+      const heatmapBucket = activityHeatmapMap.get(key);
+      if (heatmapBucket) {
+        heatmapBucket.count += 1;
       }
     }
 
@@ -208,6 +220,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       streakDays,
       totalAnswered,
       weeklyActivity,
+      activityHeatmap,
       categoryProgress,
     });
   } catch (error: unknown) {

@@ -71,6 +71,10 @@ type MeStats = {
     date: string;
     count: number;
   }>;
+  activityHeatmap: Array<{
+    date: string;
+    count: number;
+  }>;
   categoryProgress: CategoryScore[];
 };
 
@@ -353,15 +357,11 @@ export const MeDashboard = () => {
 
   const completedAttempts = attempts.filter((a) => a.status === "COMPLETED" && a.result);
   const latestCompleted = completedAttempts[0];
-
-  const sortedCategoryProgress = stats
-    ? stats.categoryProgress
-        .slice()
-        .sort((a, b) => a.percent - b.percent)
-    : [];
+  const inProgressAttempt = attempts.find((attempt) => attempt.status === "IN_PROGRESS");
 
   const profileInitial =
     profile?.email.trim().charAt(0).toUpperCase() || "?";
+  const profileName = profile?.email.split("@")[0] ?? "学習者";
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -397,7 +397,7 @@ export const MeDashboard = () => {
               onKeyDown={(event) => handleTabKeyDown(event, index)}
               className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
                 activeTab === tab.key
-                  ? "bg-blue-600 text-white dark:bg-blue-500"
+                  ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
                   : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
               }`}
             >
@@ -408,146 +408,126 @@ export const MeDashboard = () => {
       </section>
 
       {activeTab === "summary" && profile && stats && (
-        <div id="me-panel-summary" role="tabpanel" aria-labelledby="me-tab-summary" className="space-y-6">
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-lg font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-                {profileInitial}
-              </div>
-              <div>
-                <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
-                  学習者
-                </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  {profile.email}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-                    連続学習 {stats.streakDays}日
-                  </span>
-                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-                    受験 {stats.totalAttempts}回
-                  </span>
-                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
-                    回答 {stats.totalAnswered}問
-                  </span>
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => router.push("/select")}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              学習を始める
-            </button>
-          </div>
-        </section>
-
-      {stats && (
-        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <SummaryCard label="全体平均" value={`${stats.averagePercent}%`} />
-          <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
-          <SummaryCard
-            label="直近10回平均"
-            value={`${stats.recentAveragePercent}%`}
-          />
-          <SummaryCard label="連続学習" value={`${stats.streakDays}日`} />
-        </section>
-      )}
-
-      {stats && stats.weeklyActivity.length > 0 && (
-        <WeeklyActivityChart items={stats.weeklyActivity} />
-      )}
-
-      {/* 直近スコアサマリ */}
-      {latestCompleted && latestCompleted.result && (
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <h2 className="mb-4 text-lg font-semibold">直近テスト結果</h2>
-          <div className="mb-4 flex items-baseline gap-2">
-            <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">
-              {latestCompleted.result.overallPercent}
-            </span>
-            <span className="text-xl text-neutral-500">%</span>
-            <span className="ml-2 text-sm text-neutral-500 dark:text-neutral-400">
-              {formatDate(latestCompleted.completedAt)}
-            </span>
-          </div>
-
-          {/* カテゴリ別 */}
-          <div className="space-y-2">
-            {(latestCompleted.result.categoryBreakdown as CategoryScore[]).map((cat) => (
-              <div key={cat.category} className="flex items-center gap-3">
-                <span className="w-28 shrink-0 text-sm text-neutral-600 dark:text-neutral-400">
-                  {cat.category}
-                </span>
-                <div className="flex-1">
-                  <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-                    <div
-                      className="h-full rounded-full bg-blue-500 transition-all"
-                      style={{ width: `${cat.percent}%` }}
-                    />
+        <div
+          id="me-panel-summary"
+          role="tabpanel"
+          aria-labelledby="me-tab-summary"
+          className="space-y-6"
+        >
+          <section className="grid grid-cols-1 gap-4">
+            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-200 text-xl font-semibold text-brand-600 dark:bg-brand-400/25 dark:text-brand-200">
+                    {profileInitial}
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+                      {profileName}
+                    </p>
+                    <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                      {profile.email}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                      <span className="rounded-full bg-brand-200 px-2 py-0.5 text-brand-700 dark:bg-brand-400/25 dark:text-brand-200">
+                        {stats.streakDays}日連続
+                      </span>
+                      <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        累計回答 {stats.totalAnswered}問（全期間）
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <span className="w-16 text-right text-sm font-medium">
-                  {cat.percent}%
-                </span>
+                <button
+                  type="button"
+                  onClick={() => router.push("/select")}
+                  className="rounded-lg bg-brand-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+                >
+                  学習を始める
+                </button>
               </div>
-            ))}
-          </div>
-        </section>
-      )}
+            </article>
+            <ActivityHeatmap items={stats.activityHeatmap} />
+          </section>
 
-      {/* 弱点カテゴリ */}
-      {sortedCategoryProgress.length > 0 && (
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <h2 className="mb-3 text-lg font-semibold">弱点カテゴリ</h2>
-          <div className="flex flex-wrap gap-2">
-            {sortedCategoryProgress.slice(0, 3).map((cat) => (
-              <span
-                key={cat.category}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
-                  cat.percent < 50
-                    ? "bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-                    : cat.percent < 70
-                      ? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400"
-                      : "bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                }`}
-              >
-                {cat.category}: {cat.percent}%
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
+          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <SummaryCard label="全体平均" value={`${stats.averagePercent}%`} />
+            <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
+            <SummaryCard label="直近10回平均" value={`${stats.recentAveragePercent}%`} />
+            <SummaryCard label="最高スコア" value={`${stats.bestPercent}%`} />
+          </section>
 
-      {sortedCategoryProgress.length > 0 && (
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <h2 className="mb-4 text-lg font-semibold">カテゴリ進捗</h2>
-          <div className="space-y-3">
-            {sortedCategoryProgress.map((category) => (
-              <div key={category.category} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
-                    {category.category}
-                  </span>
-                  <span className="text-neutral-600 dark:text-neutral-400">
-                    {category.correct}/{category.total} ({category.percent}%)
-                  </span>
+          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+              <h2 className="mb-1 text-lg font-semibold">前回の続き</h2>
+              <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+                直近の学習状態から再開できます
+              </p>
+              {inProgressAttempt ? (
+                <div className="rounded-xl border border-brand-200 bg-brand-200/40 p-4 dark:border-brand-400/40 dark:bg-brand-400/10">
+                  <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+                    進行中の受験があります
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
+                    開始: {formatDate(inProgressAttempt.startedAt)}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push(`/quiz/${inProgressAttempt.id}`)}
+                    className="mt-3 rounded-lg bg-brand-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+                  >
+                    続きから始める
+                  </button>
                 </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-                  <div
-                    className="h-full rounded-full bg-teal-600 transition-all dark:bg-teal-500"
-                    style={{ width: `${category.percent}%` }}
-                  />
+              ) : (
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-900/30">
+                  <p className="text-sm text-neutral-700 dark:text-neutral-300">
+                    現在進行中の受験はありません。新しいテストを開始しましょう。
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => router.push("/select")}
+                    className="mt-3 rounded-lg bg-brand-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+                  >
+                    新しいテストを始める
+                  </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-      </div>
+              )}
+            </article>
+
+            {latestCompleted && latestCompleted.result ? (
+              <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+                <h2 className="mb-1 text-lg font-semibold">直近の結果</h2>
+                <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
+                  {formatDate(latestCompleted.completedAt)}
+                </p>
+                <div className="mb-4 flex items-end gap-2">
+                  <span className="text-4xl font-bold text-brand-500 dark:text-brand-300">
+                    {latestCompleted.result.overallPercent}
+                  </span>
+                  <span className="pb-1 text-xl text-neutral-500">%</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("history");
+                    void handleSelectAttempt(latestCompleted.id);
+                  }}
+                  className="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-200 dark:hover:border-neutral-500"
+                >
+                  履歴で詳細を確認
+                </button>
+              </article>
+            ) : (
+              <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+                <h2 className="mb-1 text-lg font-semibold">直近の結果</h2>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  まだ採点済みの受験がありません。
+                </p>
+              </article>
+            )}
+          </section>
+        </div>
       )}
 
       {/* 履歴一覧 */}
@@ -564,7 +544,7 @@ export const MeDashboard = () => {
             <button
               type="button"
               onClick={() => router.push("/select")}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+              className="rounded-lg bg-brand-300 px-4 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               テストを受ける
             </button>
@@ -584,7 +564,7 @@ export const MeDashboard = () => {
                   key={attempt.id}
                   className={`w-full rounded-lg border px-4 py-3 text-left ${
                     selectedAttempt?.id === attempt.id
-                      ? "border-blue-500 bg-blue-50/50 dark:border-blue-400 dark:bg-blue-900/10"
+                      ? "border-brand-400 bg-brand-200/40 dark:border-brand-300 dark:bg-brand-400/10"
                       : "border-neutral-200 dark:border-neutral-700"
                   }`}
                 >
@@ -609,7 +589,7 @@ export const MeDashboard = () => {
                       </span>
                     </div>
                     {attempt.result && (
-                      <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                      <span className="text-sm font-semibold text-brand-600 dark:text-brand-300">
                         {attempt.result.overallPercent}%
                       </span>
                     )}
@@ -637,7 +617,7 @@ export const MeDashboard = () => {
                           type="button"
                           onClick={() => router.push(`/quiz/${attempt.id}`)}
                           aria-label={`進行中の受験 ${attempt.id} を再開`}
-                          className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+                          className="rounded-lg bg-brand-300 px-3 py-1.5 text-xs font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
                         >
                           再開
                         </button>
@@ -725,7 +705,7 @@ export const MeDashboard = () => {
         <button
           type="button"
           onClick={() => router.push("/select")}
-          className="rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="rounded-lg bg-brand-300 px-6 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
         >
           新しいテストを受ける
         </button>
@@ -736,42 +716,145 @@ export const MeDashboard = () => {
   );
 };
 
-const WeeklyActivityChart = ({
+const ActivityHeatmap = ({
   items,
 }: {
   items: Array<{ date: string; count: number }>;
 }) => {
-  const maxCount = Math.max(...items.map((item) => item.count), 1);
+  const toDateKey = (date: Date): string => date.toISOString().slice(0, 10);
+  const activityByDate = new Map(items.map((item) => [item.date, item.count]));
+  const totalContributions = items.reduce((sum, item) => sum + item.count, 0);
+  const today = new Date();
+  today.setUTCHours(0, 0, 0, 0);
+  const oneYearAgo = new Date(today);
+  oneYearAgo.setUTCDate(today.getUTCDate() - 364);
+  const firstGridDate = new Date(oneYearAgo);
+  const mondayOffset = (firstGridDate.getUTCDay() + 6) % 7;
+  firstGridDate.setUTCDate(firstGridDate.getUTCDate() - mondayOffset);
+
+  const columns: Array<
+    Array<{ date: string; count: number; isInRange: boolean }>
+  > = [];
+  const cursor = new Date(firstGridDate);
+  while (cursor <= today) {
+    const week: Array<{ date: string; count: number; isInRange: boolean }> = [];
+    for (let dayIndex = 0; dayIndex < 7; dayIndex += 1) {
+      const key = toDateKey(cursor);
+      const isInRange = cursor >= oneYearAgo && cursor <= today;
+      week.push({
+        date: key,
+        count: isInRange ? (activityByDate.get(key) ?? 0) : 0,
+        isInRange,
+      });
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+    columns.push(week);
+  }
+
+  const weekCount = columns.length;
+  const heatmapCellSize = 10;
+  const heatmapGapSize = 2;
+  const heatmapGridTemplate = `repeat(${weekCount}, ${heatmapCellSize}px)`;
+  const maxCount = Math.max(
+    ...columns.flatMap((week) =>
+      week.filter((day) => day.isInRange).map((day) => day.count),
+    ),
+    1,
+  );
+
+  const monthLabels = columns.map((week, weekIndex) => {
+    const firstInRangeDay = week.find((day) => day.isInRange);
+    if (!firstInRangeDay) {
+      return "";
+    }
+    const date = new Date(firstInRangeDay.date);
+    const month = date.getUTCMonth();
+    const prevFirstDay = columns[weekIndex - 1]?.find((day) => day.isInRange);
+    const prevMonth =
+      prevFirstDay === undefined
+        ? -1
+        : new Date(prevFirstDay.date).getUTCMonth();
+    return month !== prevMonth
+      ? date.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })
+      : "";
+  });
+  const weekdayLabels: string[] = ["Mon", "", "Wed", "", "Fri", "", ""];
 
   return (
-    <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-      <h2 className="mb-1 text-lg font-semibold">週間アクティビティ</h2>
+    <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+      <h2 className="mb-1 text-lg font-semibold">学習アクティビティ</h2>
       <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-        直近7日間の回答数
+        {totalContributions.toLocaleString("en-US")} contributions in the last year
       </p>
-      <div className="grid grid-cols-7 gap-2">
-        {items.map((item) => {
-          const barHeight = Math.max(10, Math.round((item.count / maxCount) * 90));
-
-          return (
-            <div key={item.date} className="flex flex-col items-center gap-1">
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                {item.count}
-              </span>
-              <div className="flex h-24 items-end">
-                <div
-                  className="w-8 rounded-md bg-teal-600/85 dark:bg-teal-500/80"
-                  style={{ height: `${barHeight}%` }}
-                />
-              </div>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                {formatWeekday(item.date)}
-              </span>
+      <div className="overflow-x-auto pb-1">
+        <div className="min-w-max rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
+          <div className="flex flex-col gap-2">
+            <div
+              className="ml-7 grid"
+              style={{
+                gridTemplateColumns: heatmapGridTemplate,
+                columnGap: `${heatmapGapSize}px`,
+              }}
+            >
+              {monthLabels.map((label, index) => (
+                <span
+                  key={`${label}-${index}`}
+                  className="text-[10px] leading-none text-neutral-500 dark:text-neutral-400"
+                >
+                  {label}
+                </span>
+              ))}
             </div>
-          );
-        })}
+            <div className="flex gap-1.5">
+              <div className="grid grid-rows-7 items-center text-[10px] text-neutral-500 dark:text-neutral-400">
+                {weekdayLabels.map((label, index) => (
+                  <span key={`${label}-${index}`} className="h-2.5 leading-none">
+                    {label}
+                  </span>
+                ))}
+              </div>
+              <div className="inline-flex gap-0.5">
+                {columns.map((week, columnIndex) => (
+                  <div key={columnIndex} className="grid grid-rows-7 gap-0.5">
+                    {week.map((item) => {
+                      if (!item.isInRange) {
+                        return (
+                          <div
+                            key={item.date}
+                            className="h-2.5 w-2.5 rounded-[2px] bg-transparent"
+                            aria-hidden="true"
+                          />
+                        );
+                      }
+
+                      const level = getHeatLevel(item.count, maxCount);
+                      return (
+                        <div
+                          key={item.date}
+                          title={`${item.date}: ${item.count}問`}
+                          aria-label={`${item.date}に${item.count}問回答`}
+                          className={`h-2.5 w-2.5 rounded-[2px] ${level}`}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </section>
+      <div className="mt-3 flex items-center justify-end gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <span>Less</span>
+        <div className="flex items-center gap-1">
+          <span className="h-3 w-3 rounded-sm bg-neutral-200 dark:bg-neutral-700" />
+          <span className="h-3 w-3 rounded-sm bg-brand-200 dark:bg-brand-400/35" />
+          <span className="h-3 w-3 rounded-sm bg-brand-300 dark:bg-brand-400/60" />
+          <span className="h-3 w-3 rounded-sm bg-brand-500 dark:bg-brand-300" />
+        </div>
+        <span>More</span>
+      </div>
+    </article>
   );
 };
 
@@ -785,7 +868,7 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
       <h2 className="text-lg font-semibold">
         テスト詳細
         {attempt.result && (
-          <span className="ml-2 text-blue-600 dark:text-blue-400">
+          <span className="ml-2 text-brand-600 dark:text-brand-300">
             {attempt.result.overallPercent}%
           </span>
         )}
@@ -806,7 +889,7 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
                 <div className="flex-1">
                   <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                     <div
-                      className="h-full rounded-full bg-blue-500 transition-all"
+                      className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
                       style={{ width: `${cat.percent}%` }}
                     />
                   </div>
@@ -917,9 +1000,17 @@ const SummaryCard = ({
   );
 };
 
-const formatWeekday = (dateString: string): string => {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("ja-JP", { weekday: "short" });
+const getHeatLevel = (count: number, maxCount: number): string => {
+  if (count === 0) {
+    return "bg-neutral-200 dark:bg-neutral-700";
+  }
+  if (count <= maxCount * 0.33) {
+    return "bg-brand-200 dark:bg-brand-400/35";
+  }
+  if (count <= maxCount * 0.66) {
+    return "bg-brand-300 dark:bg-brand-400/60";
+  }
+  return "bg-brand-500 dark:bg-brand-300";
 };
 
 const formatDate = (dateString: string | null): string => {
