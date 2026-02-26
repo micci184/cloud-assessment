@@ -54,6 +54,24 @@ const findActiveNotionDeliveryJob = async (
   });
 };
 
+const findLatestNotionDeliveryJob = async (
+  attemptId: string,
+  userId: string,
+) => {
+  const notionDeliveryJob = getNotionDeliveryJobDelegate();
+  if (!notionDeliveryJob) {
+    return null;
+  }
+
+  return notionDeliveryJob.findFirst({
+    where: {
+      attemptId,
+      userId,
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+};
+
 const buildDeliveryInput = (
   attempt: {
     id: string;
@@ -314,11 +332,17 @@ const POST = async (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === "P2002"
       ) {
-        const concurrentJob = await findActiveNotionDeliveryJob(attempt.id, user.id);
+        const concurrentJob =
+          (await findActiveNotionDeliveryJob(attempt.id, user.id)) ??
+          (await findLatestNotionDeliveryJob(attempt.id, user.id));
         if (concurrentJob) {
+          const status =
+            concurrentJob.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
+              ? "failed"
+              : concurrentJob.status.toLowerCase();
           return NextResponse.json(
             {
-              status: concurrentJob.status.toLowerCase(),
+              status,
               job: {
                 id: concurrentJob.id,
                 totalQuestions: concurrentJob.totalQuestions,

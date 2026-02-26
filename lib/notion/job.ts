@@ -164,14 +164,26 @@ export const runNotionDeliveryJob = async (
   } catch (error: unknown) {
     const message =
       error instanceof Error ? error.message : "notion delivery job failed";
-    await prisma.notionDeliveryJob.update({
-      where: { id: jobId },
-      data: {
-        status: NotionDeliveryJobStatus.FAILED,
-        lastError: message,
-        finishedAt: new Date(),
-      },
-    });
+    try {
+      await prisma.notionDeliveryJob.update({
+        where: { id: jobId },
+        data: {
+          status: NotionDeliveryJobStatus.FAILED,
+          lastError: message,
+          finishedAt: new Date(),
+        },
+      });
+    } catch (persistError: unknown) {
+      console.error(
+        JSON.stringify({
+          event: "notion_delivery_job_failure_persist_failed",
+          jobId,
+          attemptId: input.attemptId,
+          error: persistError instanceof Error ? persistError.message : "unknown",
+          originalError: message,
+        }),
+      );
+    }
     console.error(
       JSON.stringify({
         event: "notion_delivery_job_exception",

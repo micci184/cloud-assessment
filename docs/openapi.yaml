@@ -375,6 +375,12 @@ paths:
                       failedQuestions: 0
                       duplicateDetected: false
                       lastError: null
+        "502":
+          description: フォールバック即時実行で外部送信に失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryJobStatusResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":

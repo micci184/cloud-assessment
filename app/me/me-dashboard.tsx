@@ -897,7 +897,9 @@ export const MeDashboard = () => {
                           className={`text-xs ${
                             deliveryState.kind === "success"
                               ? "text-green-600 dark:text-green-400"
-                              : "text-red-600 dark:text-red-400"
+                              : deliveryState.kind === "error"
+                                ? "text-red-600 dark:text-red-400"
+                                : "text-neutral-600 dark:text-neutral-400"
                           }`}
                         >
                           {deliveryState.message}
