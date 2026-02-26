@@ -230,6 +230,23 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /api/me/stats:
+    get:
+      tags: [Me]
+      summary: 学習サマリー統計取得
+      description: ログインユーザーの全期間・直近の学習サマリー統計を返す。
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          description: 取得成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MeStatsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /api/me/attempts:
     get:
       tags: [Me]
@@ -568,6 +585,75 @@ components:
         email:
           type: string
           format: email
+
+    WeeklyActivityItem:
+      type: object
+      required: [date, count]
+      properties:
+        date:
+          type: string
+          format: date
+          example: "2026-02-26"
+        count:
+          type: integer
+          minimum: 0
+
+    CategoryProgressItem:
+      type: object
+      required: [category, total, correct, percent]
+      properties:
+        category:
+          type: string
+        total:
+          type: integer
+          minimum: 0
+        correct:
+          type: integer
+          minimum: 0
+        percent:
+          type: number
+          format: float
+
+    MeStatsResponse:
+      type: object
+      required:
+        [
+          totalAttempts,
+          averagePercent,
+          recentAveragePercent,
+          bestPercent,
+          streakDays,
+          totalAnswered,
+          weeklyActivity,
+          categoryProgress,
+        ]
+      properties:
+        totalAttempts:
+          type: integer
+          minimum: 0
+        averagePercent:
+          type: number
+          format: float
+        recentAveragePercent:
+          type: number
+          format: float
+        bestPercent:
+          type: number
+          format: float
+        streakDays:
+          type: integer
+          minimum: 0
+        totalAnswered:
+          type: integer
+          minimum: 0
+        weeklyActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyActivityItem"
+        categoryProgress:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryProgressItem"
 
     MyAttemptSummary:
       type: object
