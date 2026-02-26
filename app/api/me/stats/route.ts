@@ -185,6 +185,10 @@ export const GET = async (request: Request): Promise<NextResponse> => {
         heatmapBucket.count += 1;
       }
     }
+    const recent7DaysAnswered = weeklyActivity.reduce(
+      (sum, item) => sum + item.count,
+      0,
+    );
 
     const categoryMap = completedQuestions.reduce<Record<string, CategoryAggregate>>(
       (acc, question) => {
@@ -219,6 +223,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       bestPercent,
       streakDays,
       totalAnswered,
+      recent7DaysAnswered,
       weeklyActivity,
       activityHeatmap,
       categoryProgress,

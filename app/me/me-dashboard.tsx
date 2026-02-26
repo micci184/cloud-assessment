@@ -67,6 +67,7 @@ type MeStats = {
   bestPercent: number;
   streakDays: number;
   totalAnswered: number;
+  recent7DaysAnswered: number;
   weeklyActivity: Array<{
     date: string;
     count: number;
@@ -524,10 +525,10 @@ export const MeDashboard = () => {
           </section>
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard label="全体平均" value={`${stats.averagePercent}%`} />
+            <SummaryCard label="全体平均点" value={`${stats.averagePercent}%`} />
             <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
-            <SummaryCard label="直近10回平均" value={`${stats.recentAveragePercent}%`} />
-            <SummaryCard label="最高スコア" value={`${stats.bestPercent}%`} />
+            <SummaryCard label="直近10回平均点" value={`${stats.recentAveragePercent}%`} />
+            <SummaryCard label="直近7日回答数" value={`${stats.recent7DaysAnswered}問`} />
           </section>
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
