@@ -15,7 +15,7 @@ export const HeaderNav = (): React.ReactElement => {
   const isMyPage = pathname === "/me";
 
   const getNavLinkClassName = (isActive: boolean): string => {
-    return `rounded-full px-3 py-1.5 transition ${
+    return `whitespace-nowrap rounded-full px-2 py-1.5 text-xs transition sm:px-3 sm:text-sm ${
       isActive
         ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
         : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
@@ -59,7 +59,7 @@ export const HeaderNav = (): React.ReactElement => {
   };
 
   return (
-    <nav className="flex items-center gap-2 text-sm">
+    <nav className="flex items-center gap-1.5 sm:gap-2">
       {isLoadingAuth ? null : isAuthenticated ? (
         <button
           type="button"
@@ -67,7 +67,7 @@ export const HeaderNav = (): React.ReactElement => {
             void handleLogout();
           }}
           disabled={isLoggingOut}
-          className="rounded-full px-3 py-1.5 text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="whitespace-nowrap rounded-full px-2 py-1.5 text-xs text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800 sm:px-3 sm:text-sm"
         >
           {isLoggingOut ? "Logout..." : "Logout"}
         </button>
