@@ -169,7 +169,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       weeklyActivity.map((item) => [item.date, item]),
     );
 
-    const activityHeatmap = createActivityBuckets(84);
+    const activityHeatmap = createActivityBuckets(365);
     const activityHeatmapMap = new Map(
       activityHeatmap.map((item) => [item.date, item]),
     );

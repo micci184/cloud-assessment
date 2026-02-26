@@ -11,6 +11,16 @@ export const HeaderNav = (): React.ReactElement => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const isSelectPage = pathname === "/select" || pathname.startsWith("/quiz/");
+  const isMyPage = pathname === "/me";
+
+  const getNavLinkClassName = (isActive: boolean): string => {
+    return `rounded-full px-3 py-1.5 transition ${
+      isActive
+        ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
+        : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+    }`;
+  };
 
   useEffect(() => {
     if (isLoginPage) {
@@ -49,7 +59,7 @@ export const HeaderNav = (): React.ReactElement => {
   };
 
   return (
-    <nav className="flex items-center gap-4 text-sm text-neutral-600 dark:text-neutral-300">
+    <nav className="flex items-center gap-2 text-sm">
       {isLoadingAuth ? null : isAuthenticated ? (
         <button
           type="button"
@@ -57,17 +67,23 @@ export const HeaderNav = (): React.ReactElement => {
             void handleLogout();
           }}
           disabled={isLoggingOut}
-          className="disabled:opacity-60"
+          className="rounded-full px-3 py-1.5 text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
           {isLoggingOut ? "Logout..." : "Logout"}
         </button>
       ) : (
-        <Link href="/login">Login</Link>
+        <Link href="/login" className={getNavLinkClassName(isLoginPage)}>
+          Login
+        </Link>
       )}
       {!isLoginPage && (
         <>
-          <Link href="/select">Select</Link>
-          <Link href="/me">Me</Link>
+          <Link href="/select" className={getNavLinkClassName(isSelectPage)}>
+            Select
+          </Link>
+          <Link href="/me" className={getNavLinkClassName(isMyPage)}>
+            My page
+          </Link>
         </>
       )}
     </nav>

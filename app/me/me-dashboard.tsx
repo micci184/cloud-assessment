@@ -433,7 +433,7 @@ export const MeDashboard = () => {
                         {stats.streakDays}日連続
                       </span>
                       <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                        {stats.totalAnswered}問回答
+                        累計回答 {stats.totalAnswered}問
                       </span>
                     </div>
                   </div>
@@ -727,31 +727,67 @@ const ActivityHeatmap = ({
   const columns = Array.from({ length: weekCount }, (_, weekIndex) =>
     safeItems.slice(weekIndex * 7, weekIndex * 7 + 7),
   );
+  const monthLabels = columns.map((week, weekIndex) => {
+    const firstDay = week[0];
+    if (!firstDay) {
+      return "";
+    }
+    const date = new Date(firstDay.date);
+    const currentMonth = date.getUTCMonth();
+    const prevWeek = columns[weekIndex - 1];
+    const prevFirstDay = prevWeek?.[0];
+    const prevMonth =
+      prevFirstDay === undefined
+        ? -1
+        : new Date(prevFirstDay.date).getUTCMonth();
+    return currentMonth !== prevMonth
+      ? date.toLocaleDateString("ja-JP", { month: "short", timeZone: "UTC" })
+      : "";
+  });
+  const weekdayLabels: string[] = ["月", "", "水", "", "金", "", ""];
 
   return (
     <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
       <h2 className="mb-1 text-lg font-semibold">学習アクティビティ</h2>
       <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
-        直近12週間の回答ヒートマップ
+        直近1年の回答ヒートマップ
       </p>
       <div className="overflow-x-auto">
-        <div className="inline-flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
-          {columns.map((week, columnIndex) => (
-            <div key={columnIndex} className="grid grid-rows-7 gap-1">
-              {week.map((item) => {
-                const level = getHeatLevel(item.count, maxCount);
-
-                return (
-                  <div
-                    key={item.date}
-                    title={`${item.date}: ${item.count}問`}
-                    aria-label={`${item.date}に${item.count}問回答`}
-                    className={`h-3.5 w-3.5 rounded-sm ${level}`}
-                  />
-                );
-              })}
+        <div className="inline-flex flex-col gap-2 rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
+          <div className="ml-6 grid gap-1" style={{ gridTemplateColumns: `repeat(${weekCount}, minmax(0, 1fr))` }}>
+            {monthLabels.map((label, index) => (
+              <span key={`${label}-${index}`} className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <div className="grid grid-rows-7 items-center text-[10px] text-neutral-500 dark:text-neutral-400">
+              {weekdayLabels.map((label, index) => (
+                <span key={`${label}-${index}`} className="h-3.5">
+                  {label}
+                </span>
+              ))}
             </div>
-          ))}
+            <div className="inline-flex gap-1">
+              {columns.map((week, columnIndex) => (
+                <div key={columnIndex} className="grid grid-rows-7 gap-1">
+                  {week.map((item) => {
+                    const level = getHeatLevel(item.count, maxCount);
+
+                    return (
+                      <div
+                        key={item.date}
+                        title={`${item.date}: ${item.count}問`}
+                        aria-label={`${item.date}に${item.count}問回答`}
+                        className={`h-3.5 w-3.5 rounded-sm ${level}`}
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
       <div className="mt-3 flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
