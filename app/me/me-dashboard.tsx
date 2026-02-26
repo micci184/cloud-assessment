@@ -85,6 +85,8 @@ type MeProfile = {
 
 type MeTabKey = "summary" | "history";
 
+const ATTEMPTS_PAGE_SIZE = 10;
+
 export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -95,6 +97,10 @@ export const MeDashboard = () => {
   const [stats, setStats] = useState<MeStats | null>(null);
   const [profile, setProfile] = useState<MeProfile | null>(null);
   const [activeTab, setActiveTab] = useState<MeTabKey>("summary");
+  const [attemptsPage, setAttemptsPage] = useState(1);
+  const [attemptsTotalPages, setAttemptsTotalPages] = useState(0);
+  const [attemptsTotalCount, setAttemptsTotalCount] = useState(0);
+  const [isAttemptsLoading, setIsAttemptsLoading] = useState(false);
   const [deliveryStateMap, setDeliveryStateMap] = useState<
     Record<string, NotionDeliveryState>
   >({});
@@ -108,7 +114,7 @@ export const MeDashboard = () => {
         const [meResponse, statsResponse, attemptsResponse] = await Promise.all([
           fetch("/api/me"),
           fetch("/api/me/stats"),
-          fetch("/api/me/attempts"),
+          fetch(`/api/me/attempts?page=1&pageSize=${ATTEMPTS_PAGE_SIZE}`),
         ]);
 
         if (!meResponse.ok) {
@@ -128,10 +134,19 @@ export const MeDashboard = () => {
         const statsData = (await statsResponse.json()) as MeStats;
         const attemptsData = (await attemptsResponse.json()) as {
           attempts: AttemptSummary[];
+          pagination: {
+            totalCount: number;
+            totalPages: number;
+            currentPage: number;
+            pageSize: number;
+          };
         };
         setProfile(meData);
         setStats(statsData);
         setAttempts(attemptsData.attempts);
+        setAttemptsTotalCount(attemptsData.pagination.totalCount);
+        setAttemptsTotalPages(attemptsData.pagination.totalPages);
+        setAttemptsPage(attemptsData.pagination.currentPage);
       } catch {
         setError("通信に失敗しました");
       } finally {
@@ -166,6 +181,43 @@ export const MeDashboard = () => {
       setError("通信に失敗しました");
     } finally {
       setIsDetailLoading(false);
+    }
+  };
+
+  const handleAttemptsPageChange = async (nextPage: number): Promise<void> => {
+    if (nextPage < 1 || (attemptsTotalPages > 0 && nextPage > attemptsTotalPages)) {
+      return;
+    }
+
+    setIsAttemptsLoading(true);
+    setSelectedAttempt(null);
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/me/attempts?page=${nextPage}&pageSize=${ATTEMPTS_PAGE_SIZE}`,
+      );
+      if (!response.ok) {
+        setError("履歴の取得に失敗しました");
+        return;
+      }
+
+      const data = (await response.json()) as {
+        attempts: AttemptSummary[];
+        pagination: {
+          totalCount: number;
+          totalPages: number;
+          currentPage: number;
+          pageSize: number;
+        };
+      };
+      setAttempts(data.attempts);
+      setAttemptsTotalCount(data.pagination.totalCount);
+      setAttemptsTotalPages(data.pagination.totalPages);
+      setAttemptsPage(data.pagination.currentPage);
+    } catch {
+      setError("通信に失敗しました");
+    } finally {
+      setIsAttemptsLoading(false);
     }
   };
 
@@ -358,6 +410,12 @@ export const MeDashboard = () => {
   const completedAttempts = attempts.filter((a) => a.status === "COMPLETED" && a.result);
   const latestCompleted = completedAttempts[0];
   const inProgressAttempt = attempts.find((attempt) => attempt.status === "IN_PROGRESS");
+  const historyStartIndex =
+    attemptsTotalCount === 0 ? 0 : (attemptsPage - 1) * ATTEMPTS_PAGE_SIZE + 1;
+  const historyEndIndex = Math.min(
+    attemptsPage * ATTEMPTS_PAGE_SIZE,
+    attemptsTotalCount,
+  );
 
   const profileInitial =
     profile?.email.trim().charAt(0).toUpperCase() || "?";
@@ -685,6 +743,40 @@ export const MeDashboard = () => {
                 </div>
               );
             })}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700">
+              <p className="text-neutral-600 dark:text-neutral-400">
+                {historyStartIndex}-{historyEndIndex} / {attemptsTotalCount} 件
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleAttemptsPageChange(attemptsPage - 1);
+                  }}
+                  disabled={attemptsPage <= 1 || isAttemptsLoading}
+                  className="rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                >
+                  前へ
+                </button>
+                <span className="text-xs text-neutral-600 dark:text-neutral-400">
+                  {attemptsTotalPages === 0 ? "1 / 1" : `${attemptsPage} / ${attemptsTotalPages}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleAttemptsPageChange(attemptsPage + 1);
+                  }}
+                  disabled={
+                    attemptsTotalPages === 0 ||
+                    attemptsPage >= attemptsTotalPages ||
+                    isAttemptsLoading
+                  }
+                  className="rounded-md border border-neutral-300 px-3 py-1 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                >
+                  次へ
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </section>
