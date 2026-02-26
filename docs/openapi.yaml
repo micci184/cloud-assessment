@@ -310,26 +310,10 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /api/me/attempts/{attemptId}/deliver-notion:
-    post:
+    get:
       tags: [Me]
-      summary: Notionへ受験結果を送信
-      description: |
-        指定Attempt（完了済み）の設問を Notion Database へ送信する（設問単位で1行作成）。
-        Notion DB は以下の8カラム構成を前提とする。
-        - `attempt id` (Text)
-        - `category` (Text)
-        - `level` (Number)
-        - `questionText` (Text)
-        - `selectedChoice` (Text)
-        - `answerChoice` (Text)
-        - `isCorrect` (Checkbox)
-        - `explanation` (Text)
-
-        なお Notion Database の仕様上、別途 Title 列が1つ必要。
-        その列名は `NOTION_TITLE_PROPERTY_NAME`（デフォルト: `Name`）で指定する。
-
-        冪等性は `attempt id` + `category` + `level` + `questionText` の組み合わせで判定し、
-        既存の設問行は再作成しない。全設問が既存の場合は `duplicate: true` を返す。
+      summary: Notion送信ジョブステータス取得
+      description: 指定Attemptの最新Notion送信ジョブの進捗・結果を返す。
       security:
         - cookieAuth: []
       parameters:
@@ -340,29 +324,63 @@ paths:
             type: string
       responses:
         "200":
-          description: 送信成功または冪等スキップ
+          description: 取得成功
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/NotionDeliveryResponse"
+                $ref: "#/components/schemas/NotionDeliveryJobStatusResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    post:
+      tags: [Me]
+      summary: Notionへ受験結果を送信
+      description: |
+        指定Attempt（完了済み）のNotion送信ジョブをキュー投入する。
+        送信進捗は `GET /api/me/attempts/{attemptId}/deliver-notion` で参照する。
+      security:
+        - cookieAuth: []
+      parameters:
+        - name: attemptId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: フォールバック即時実行で送信完了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryJobStatusResponse"
+        "202":
+          description: ジョブ受付または既存ジョブ進行中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryJobStartResponse"
               examples:
-                sent:
-                  summary: 新規送信
+                queued:
+                  summary: 新規ジョブ受付
                   value:
-                    status: sent
-                    attempts: 1
-                    duplicate: false
-                duplicate:
-                  summary: 全設問が既存で新規作成なし
-                  value:
-                    status: sent
-                    attempts: 1
-                    duplicate: true
-                skipped:
-                  summary: 設定不足で送信スキップ
-                  value:
-                    status: skipped
-                    reason: missing_config
+                    status: queued
+                    job:
+                      id: cma2jobexample
+                      totalQuestions: 10
+                      processedQuestions: 0
+                      successQuestions: 0
+                      failedQuestions: 0
+                      duplicateDetected: false
+                      lastError: null
+        "502":
+          description: フォールバック即時実行で外部送信に失敗
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryJobStatusResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -371,18 +389,6 @@ paths:
           $ref: "#/components/responses/Forbidden"
         "404":
           $ref: "#/components/responses/NotFound"
-        "502":
-          description: 外部連携エラー
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/NotionDeliveryResponse"
-              examples:
-                failed:
-                  value:
-                    status: failed
-                    attempts: 3
-                    errorMessage: "notion create page failed: status=503"
 
 components:
   securitySchemes:
@@ -771,22 +777,74 @@ components:
         result:
           $ref: "#/components/schemas/FinalizeAttemptResponse"
 
-    NotionDeliveryResponse:
+    NotionDeliveryJob:
+      type: object
+      required:
+        [id, totalQuestions, processedQuestions, successQuestions, failedQuestions, duplicateDetected]
+      properties:
+        id:
+          type: string
+        totalQuestions:
+          type: integer
+          minimum: 0
+        processedQuestions:
+          type: integer
+          minimum: 0
+        successQuestions:
+          type: integer
+          minimum: 0
+        failedQuestions:
+          type: integer
+          minimum: 0
+        duplicateDetected:
+          type: boolean
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        finishedAt:
+          type: string
+          format: date-time
+          nullable: true
+        lastError:
+          type: string
+          nullable: true
+        failedItems:
+          type: array
+          items:
+            type: object
+            required: [category, level, questionText, errorMessage]
+            properties:
+              category:
+                type: string
+              level:
+                type: integer
+              questionText:
+                type: string
+              errorMessage:
+                type: string
+
+    NotionDeliveryJobStartResponse:
+      type: object
+      required: [status, job]
+      properties:
+        status:
+          type: string
+          enum: [queued, in_progress]
+        job:
+          $ref: "#/components/schemas/NotionDeliveryJob"
+
+    NotionDeliveryJobStatusResponse:
       type: object
       required: [status]
       properties:
         status:
           type: string
-          enum: [sent, skipped, failed]
-        attempts:
-          type: integer
-          description: 送信を試みた回数
-        duplicate:
-          type: boolean
-          description: 対象設問がすべて既存で新規作成がなかった場合はtrue
-        reason:
+          enum: [idle, queued, in_progress, completed, failed]
+        job:
+          $ref: "#/components/schemas/NotionDeliveryJob"
+          nullable: true
+        message:
           type: string
-          description: skipped時の理由
-        errorMessage:
-          type: string
-          description: failed時のエラー内容
+          nullable: true
+
