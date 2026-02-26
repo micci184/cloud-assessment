@@ -60,6 +60,25 @@ type ExportState = {
   kind: "success" | "error" | null;
 };
 
+type MeStats = {
+  totalAttempts: number;
+  averagePercent: number;
+  recentAveragePercent: number;
+  bestPercent: number;
+  streakDays: number;
+  totalAnswered: number;
+  weeklyActivity: Array<{
+    date: string;
+    count: number;
+  }>;
+  categoryProgress: CategoryScore[];
+};
+
+type MeProfile = {
+  id: string;
+  email: string;
+};
+
 export const MeDashboard = () => {
   const router = useRouter();
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
@@ -67,6 +86,8 @@ export const MeDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [error, setError] = useState("");
+  const [stats, setStats] = useState<MeStats | null>(null);
+  const [profile, setProfile] = useState<MeProfile | null>(null);
   const [deliveryStateMap, setDeliveryStateMap] = useState<
     Record<string, NotionDeliveryState>
   >({});
@@ -74,17 +95,35 @@ export const MeDashboard = () => {
   const errorRef = useRef<HTMLParagraphElement>(null);
 
   useEffect(() => {
-    const fetchAttempts = async (): Promise<void> => {
+    const fetchDashboardData = async (): Promise<void> => {
       try {
-        const response = await fetch("/api/me/attempts");
+        const [meResponse, statsResponse, attemptsResponse] = await Promise.all([
+          fetch("/api/me"),
+          fetch("/api/me/stats"),
+          fetch("/api/me/attempts"),
+        ]);
 
-        if (!response.ok) {
+        if (!meResponse.ok) {
+          setError("ユーザー情報の取得に失敗しました");
+          return;
+        }
+        if (!statsResponse.ok) {
+          setError("学習サマリーの取得に失敗しました");
+          return;
+        }
+        if (!attemptsResponse.ok) {
           setError("履歴の取得に失敗しました");
           return;
         }
 
-        const data = (await response.json()) as { attempts: AttemptSummary[] };
-        setAttempts(data.attempts);
+        const meData = (await meResponse.json()) as MeProfile;
+        const statsData = (await statsResponse.json()) as MeStats;
+        const attemptsData = (await attemptsResponse.json()) as {
+          attempts: AttemptSummary[];
+        };
+        setProfile(meData);
+        setStats(statsData);
+        setAttempts(attemptsData.attempts);
       } catch {
         setError("通信に失敗しました");
       } finally {
@@ -92,7 +131,7 @@ export const MeDashboard = () => {
       }
     };
 
-    void fetchAttempts();
+    void fetchDashboardData();
   }, []);
 
   useEffect(() => {
@@ -254,11 +293,14 @@ export const MeDashboard = () => {
   const completedAttempts = attempts.filter((a) => a.status === "COMPLETED" && a.result);
   const latestCompleted = completedAttempts[0];
 
-  const weakCategories = latestCompleted
-    ? (latestCompleted.result!.categoryBreakdown as CategoryScore[])
+  const weakCategories = stats
+    ? stats.categoryProgress
         .slice()
         .sort((a, b) => a.percent - b.percent)
     : [];
+
+  const profileInitial =
+    profile?.email.trim().charAt(0).toUpperCase() || "?";
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -274,6 +316,56 @@ export const MeDashboard = () => {
         >
           {error}
         </p>
+      )}
+
+      {profile && stats && (
+        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-lg font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                {profileInitial}
+              </div>
+              <div>
+                <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                  学習者
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  {profile.email}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+                    連続学習 {stats.streakDays}日
+                  </span>
+                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+                    受験 {stats.totalAttempts}回
+                  </span>
+                  <span className="rounded-full border border-neutral-200 px-2 py-0.5 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300">
+                    回答 {stats.totalAnswered}問
+                  </span>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => router.push("/select")}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+            >
+              学習を始める
+            </button>
+          </div>
+        </section>
+      )}
+
+      {stats && (
+        <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <SummaryCard label="全体平均" value={`${stats.averagePercent}%`} />
+          <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
+          <SummaryCard
+            label="直近10回平均"
+            value={`${stats.recentAveragePercent}%`}
+          />
+          <SummaryCard label="連続学習" value={`${stats.streakDays}日`} />
+        </section>
       )}
 
       {/* 直近スコアサマリ */}
@@ -641,6 +733,23 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
         </div>
       )}
     </section>
+  );
+};
+
+const SummaryCard = ({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) => {
+  return (
+    <article className="rounded-xl border border-black/10 bg-white p-4 dark:border-white/15 dark:bg-black/50">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">{label}</p>
+      <p className="mt-2 text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+        {value}
+      </p>
+    </article>
   );
 };
 
