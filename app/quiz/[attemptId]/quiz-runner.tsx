@@ -52,6 +52,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
   const choiceButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const questionNavButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const questionTitleRef = useRef<HTMLHeadingElement>(null);
+  const errorRef = useRef<HTMLParagraphElement>(null);
 
   const fetchAttempt = useCallback(async () => {
     try {
@@ -88,6 +89,12 @@ export const QuizRunner = ({ attemptId }: Props) => {
   useEffect(() => {
     questionTitleRef.current?.focus();
   }, [currentIndex]);
+
+  useEffect(() => {
+    if (error) {
+      errorRef.current?.focus();
+    }
+  }, [error]);
 
   const handleAnswer = async (): Promise<void> => {
     if (selectedChoice === null || !attempt) return;
@@ -269,7 +276,15 @@ export const QuizRunner = ({ attemptId }: Props) => {
   if (error && !attempt) {
     return (
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p
+          ref={errorRef}
+          tabIndex={-1}
+          role="alert"
+          aria-live="assertive"
+          className="text-sm text-red-600 outline-none dark:text-red-400"
+        >
+          {error}
+        </p>
       </section>
     );
   }
@@ -381,7 +396,13 @@ export const QuizRunner = ({ attemptId }: Props) => {
         </div>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+          <p
+            ref={errorRef}
+            tabIndex={-1}
+            role="alert"
+            aria-live="assertive"
+            className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 outline-none dark:bg-red-900/20 dark:text-red-400"
+          >
             {error}
           </p>
         )}
