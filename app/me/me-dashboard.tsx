@@ -293,7 +293,7 @@ export const MeDashboard = () => {
   const completedAttempts = attempts.filter((a) => a.status === "COMPLETED" && a.result);
   const latestCompleted = completedAttempts[0];
 
-  const weakCategories = stats
+  const sortedCategoryProgress = stats
     ? stats.categoryProgress
         .slice()
         .sort((a, b) => a.percent - b.percent)
@@ -407,11 +407,11 @@ export const MeDashboard = () => {
       )}
 
       {/* 弱点カテゴリ */}
-      {weakCategories.length > 0 && (
+      {sortedCategoryProgress.length > 0 && (
         <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
           <h2 className="mb-3 text-lg font-semibold">弱点カテゴリ</h2>
           <div className="flex flex-wrap gap-2">
-            {weakCategories.slice(0, 3).map((cat) => (
+            {sortedCategoryProgress.slice(0, 3).map((cat) => (
               <span
                 key={cat.category}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
@@ -424,6 +424,32 @@ export const MeDashboard = () => {
               >
                 {cat.category}: {cat.percent}%
               </span>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {sortedCategoryProgress.length > 0 && (
+        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <h2 className="mb-4 text-lg font-semibold">カテゴリ進捗</h2>
+          <div className="space-y-3">
+            {sortedCategoryProgress.map((category) => (
+              <div key={category.category} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium text-neutral-800 dark:text-neutral-200">
+                    {category.category}
+                  </span>
+                  <span className="text-neutral-600 dark:text-neutral-400">
+                    {category.correct}/{category.total} ({category.percent}%)
+                  </span>
+                </div>
+                <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                  <div
+                    className="h-full rounded-full bg-teal-600 transition-all dark:bg-teal-500"
+                    style={{ width: `${category.percent}%` }}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </section>
