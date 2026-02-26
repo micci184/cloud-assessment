@@ -101,6 +101,10 @@ export const MeDashboard = () => {
   const [attemptsTotalPages, setAttemptsTotalPages] = useState(0);
   const [attemptsTotalCount, setAttemptsTotalCount] = useState(0);
   const [isAttemptsLoading, setIsAttemptsLoading] = useState(false);
+  const [latestCompletedAttempt, setLatestCompletedAttempt] =
+    useState<AttemptSummary | null>(null);
+  const [latestInProgressAttempt, setLatestInProgressAttempt] =
+    useState<AttemptSummary | null>(null);
   const [deliveryStateMap, setDeliveryStateMap] = useState<
     Record<string, NotionDeliveryState>
   >({});
@@ -140,6 +144,10 @@ export const MeDashboard = () => {
             currentPage: number;
             pageSize: number;
           };
+          summary: {
+            latestCompleted: AttemptSummary | null;
+            latestInProgress: AttemptSummary | null;
+          };
         };
         setProfile(meData);
         setStats(statsData);
@@ -147,6 +155,8 @@ export const MeDashboard = () => {
         setAttemptsTotalCount(attemptsData.pagination.totalCount);
         setAttemptsTotalPages(attemptsData.pagination.totalPages);
         setAttemptsPage(attemptsData.pagination.currentPage);
+        setLatestCompletedAttempt(attemptsData.summary.latestCompleted);
+        setLatestInProgressAttempt(attemptsData.summary.latestInProgress);
       } catch {
         setError("通信に失敗しました");
       } finally {
@@ -209,11 +219,17 @@ export const MeDashboard = () => {
           currentPage: number;
           pageSize: number;
         };
+        summary: {
+          latestCompleted: AttemptSummary | null;
+          latestInProgress: AttemptSummary | null;
+        };
       };
       setAttempts(data.attempts);
       setAttemptsTotalCount(data.pagination.totalCount);
       setAttemptsTotalPages(data.pagination.totalPages);
       setAttemptsPage(data.pagination.currentPage);
+      setLatestCompletedAttempt(data.summary.latestCompleted);
+      setLatestInProgressAttempt(data.summary.latestInProgress);
     } catch {
       setError("通信に失敗しました");
     } finally {
@@ -407,9 +423,8 @@ export const MeDashboard = () => {
     );
   }
 
-  const completedAttempts = attempts.filter((a) => a.status === "COMPLETED" && a.result);
-  const latestCompleted = completedAttempts[0];
-  const inProgressAttempt = attempts.find((attempt) => attempt.status === "IN_PROGRESS");
+  const latestCompleted = latestCompletedAttempt;
+  const inProgressAttempt = latestInProgressAttempt;
   const historyStartIndex =
     attemptsTotalCount === 0 ? 0 : (attemptsPage - 1) * ATTEMPTS_PAGE_SIZE + 1;
   const historyEndIndex = Math.min(

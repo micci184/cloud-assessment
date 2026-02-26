@@ -696,15 +696,14 @@ components:
           type: string
           format: date-time
           nullable: true
-        overallPercent:
-          type: number
-          format: float
+        result:
+          $ref: "#/components/schemas/FinalizeAttemptResponse"
           nullable: true
           description: COMPLETED時のみ
 
     MyAttemptsResponse:
       type: object
-      required: [attempts, pagination]
+      required: [attempts, pagination, summary]
       properties:
         attempts:
           type: array
@@ -712,6 +711,8 @@ components:
             $ref: "#/components/schemas/MyAttemptSummary"
         pagination:
           $ref: "#/components/schemas/PaginationMeta"
+        summary:
+          $ref: "#/components/schemas/MyAttemptsSummaryMeta"
 
     PaginationMeta:
       type: object
@@ -729,6 +730,17 @@ components:
         pageSize:
           type: integer
           minimum: 1
+
+    MyAttemptsSummaryMeta:
+      type: object
+      required: [latestCompleted, latestInProgress]
+      properties:
+        latestCompleted:
+          $ref: "#/components/schemas/MyAttemptSummary"
+          nullable: true
+        latestInProgress:
+          $ref: "#/components/schemas/MyAttemptSummary"
+          nullable: true
 
     MyAttemptDetailResponse:
       type: object
