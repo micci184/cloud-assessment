@@ -87,6 +87,17 @@ type MeProfile = {
 type MeTabKey = "summary" | "history";
 
 const ATTEMPTS_PAGE_SIZE = 10;
+const NOTION_STATUS_POLL_INTERVAL_MS = 1500;
+const NOTION_STATUS_POLL_MAX_ATTEMPTS = 40;
+
+type NotionDeliveryJobSnapshot = {
+  id: string;
+  totalQuestions: number;
+  processedQuestions: number;
+  successQuestions: number;
+  failedQuestions: number;
+  lastError: string | null;
+};
 
 export const MeDashboard = () => {
   const router = useRouter();
@@ -112,6 +123,12 @@ export const MeDashboard = () => {
   const [exportStateMap, setExportStateMap] = useState<Record<string, ExportState>>({});
   const errorRef = useRef<HTMLParagraphElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  const wait = async (ms: number): Promise<void> => {
+    await new Promise((resolve) => {
+      setTimeout(resolve, ms);
+    });
+  };
 
   useEffect(() => {
     const fetchDashboardData = async (): Promise<void> => {
@@ -254,10 +271,10 @@ export const MeDashboard = () => {
       });
 
       const data = (await response.json()) as {
-        status?: "sent" | "skipped" | "failed";
-        duplicate?: boolean;
+        status?: string;
         reason?: string;
         errorMessage?: string;
+        job?: NotionDeliveryJobSnapshot;
       };
 
       if (!response.ok) {
@@ -272,17 +289,121 @@ export const MeDashboard = () => {
         return;
       }
 
-      const successMessage =
-        data.status === "sent" && data.duplicate
-          ? "既に送信済みのため重複送信をスキップしました"
-          : "Notionに送信しました";
+      const pollDeliveryStatus = async (): Promise<void> => {
+        for (let pollCount = 0; pollCount < NOTION_STATUS_POLL_MAX_ATTEMPTS; pollCount += 1) {
+          const statusResponse = await fetch(
+            `/api/me/attempts/${attemptId}/deliver-notion`,
+          );
+          if (!statusResponse.ok) {
+            setDeliveryStateMap((prev) => ({
+              ...prev,
+              [attemptId]: {
+                isSending: false,
+                message: "Notion送信ステータスの取得に失敗しました",
+                kind: "error",
+              },
+            }));
+            return;
+          }
+
+          const statusData = (await statusResponse.json()) as {
+            status?: string;
+            job?: NotionDeliveryJobSnapshot;
+          };
+          const job = statusData.job;
+          const progressText = job
+            ? ` (${job.processedQuestions}/${job.totalQuestions})`
+            : "";
+
+          if (statusData.status === "queued" || statusData.status === "in_progress") {
+            setDeliveryStateMap((prev) => ({
+              ...prev,
+              [attemptId]: {
+                isSending: true,
+                message: `Notion送信中...${progressText}`,
+                kind: null,
+              },
+            }));
+            await wait(NOTION_STATUS_POLL_INTERVAL_MS);
+            continue;
+          }
+
+          if (statusData.status === "completed") {
+            setDeliveryStateMap((prev) => ({
+              ...prev,
+              [attemptId]: {
+                isSending: false,
+                message: "Notionに送信しました",
+                kind: "success",
+              },
+            }));
+            return;
+          }
+
+          if (statusData.status === "completed_with_errors") {
+            setDeliveryStateMap((prev) => ({
+              ...prev,
+              [attemptId]: {
+                isSending: false,
+                message: `一部送信に失敗しました（失敗 ${job?.failedQuestions ?? 0} 件）`,
+                kind: "error",
+              },
+            }));
+            return;
+          }
+
+          if (statusData.status === "failed") {
+            setDeliveryStateMap((prev) => ({
+              ...prev,
+              [attemptId]: {
+                isSending: false,
+                message: job?.lastError ?? "Notion送信に失敗しました",
+                kind: "error",
+              },
+            }));
+            return;
+          }
+
+          setDeliveryStateMap((prev) => ({
+            ...prev,
+            [attemptId]: {
+              isSending: false,
+              message: "Notion送信状態を確認できませんでした",
+              kind: "error",
+            },
+          }));
+          return;
+        }
+
+        setDeliveryStateMap((prev) => ({
+          ...prev,
+          [attemptId]: {
+            isSending: false,
+            message: "送信処理の完了待ちがタイムアウトしました",
+            kind: "error",
+          },
+        }));
+      };
+
+      if (data.status === "queued" || data.status === "in_progress") {
+        setDeliveryStateMap((prev) => ({
+          ...prev,
+          [attemptId]: {
+            isSending: true,
+            message: "Notion送信ジョブを開始しました",
+            kind: null,
+          },
+        }));
+        await pollDeliveryStatus();
+        return;
+      }
 
       setDeliveryStateMap((prev) => ({
         ...prev,
         [attemptId]: {
           isSending: false,
-          message: successMessage,
-          kind: "success",
+          message: data.reason ?? "Notion送信を開始できませんでした",
+          kind: "error",
         },
       }));
     } catch {

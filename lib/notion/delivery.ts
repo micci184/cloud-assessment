@@ -27,6 +27,55 @@ type NotionDeliveryResult =
   | { status: "skipped"; reason: "missing_config" }
   | { status: "failed"; attempts: number; errorMessage: string };
 
+type NotionDeliveryFailureItem = {
+  category: string;
+  level: number;
+  questionText: string;
+  errorMessage: string;
+};
+
+type NotionDeliveryProgress = {
+  totalQuestions: number;
+  processedQuestions: number;
+  successQuestions: number;
+  failedQuestions: number;
+  lastError: string | null;
+};
+
+type NotionDeliveryDetailedResult =
+  | {
+      status: "skipped";
+      reason: "missing_config";
+    }
+  | {
+      status: "completed";
+      totalQuestions: number;
+      processedQuestions: number;
+      successQuestions: number;
+      failedQuestions: number;
+      duplicate: boolean;
+      failures: NotionDeliveryFailureItem[];
+    }
+  | {
+      status: "completed_with_errors";
+      totalQuestions: number;
+      processedQuestions: number;
+      successQuestions: number;
+      failedQuestions: number;
+      duplicate: boolean;
+      failures: NotionDeliveryFailureItem[];
+    }
+  | {
+      status: "failed";
+      totalQuestions: number;
+      processedQuestions: number;
+      successQuestions: number;
+      failedQuestions: number;
+      duplicate: boolean;
+      failures: NotionDeliveryFailureItem[];
+      errorMessage: string;
+    };
+
 type NotionQueryResponse = { results?: Array<{ id: string }> };
 
 const getOptionalEnv = (key: string): string | undefined => {
@@ -83,6 +132,18 @@ const safeErrorMessage = (error: unknown): string => {
   }
 
   return String(error);
+};
+
+const parseStatusCodeFromError = (message: string): number | undefined => {
+  const matched = message.match(/status=(\d+)/);
+  if (!matched) {
+    return undefined;
+  }
+  const statusCode = Number.parseInt(matched[1] ?? "", 10);
+  if (!Number.isFinite(statusCode)) {
+    return undefined;
+  }
+  return statusCode;
 };
 
 const shouldRetry = (statusCode: number | undefined): boolean => {
@@ -227,51 +288,28 @@ const createQuestionRow = async (
   }
 };
 
-const syncQuestionRows = async (
+const syncQuestionWithRetry = async (
   config: NotionConfig,
   input: NotionDeliveryInput,
-): Promise<number> => {
-  let createdCount = 0;
-
-  for (const question of input.questions) {
-    const exists = await findQuestionRowInNotion(config, input.attemptId, question);
-
-    if (exists) {
-      continue;
-    }
-
-    await createQuestionRow(config, input.attemptId, question);
-    createdCount += 1;
-  }
-
-  return createdCount;
-};
-
-export const deliverAttemptResultToNotion = async (
-  input: NotionDeliveryInput,
-): Promise<NotionDeliveryResult> => {
-  const config = getNotionConfig();
-
-  if (!config) {
-    return { status: "skipped", reason: "missing_config" };
-  }
-
+  question: NotionDeliveryInput["questions"][number],
+): Promise<{ ok: true; created: boolean } | { ok: false; errorMessage: string }> => {
   let attempts = 0;
   let lastErrorMessage = "unknown error";
   let lastStatusCode: number | undefined;
 
   while (attempts < config.maxRetries) {
     attempts += 1;
-
     try {
-      const createdCount = await syncQuestionRows(config, input);
-      return { status: "sent", attempts, duplicate: createdCount === 0 };
-    } catch (error: unknown) {
-      const message = safeErrorMessage(error);
-      lastErrorMessage = message;
+      const exists = await findQuestionRowInNotion(config, input.attemptId, question);
+      if (exists) {
+        return { ok: true, created: false };
+      }
 
-      const matched = message.match(/status=(\d+)/);
-      lastStatusCode = matched ? Number.parseInt(matched[1] ?? "", 10) : undefined;
+      await createQuestionRow(config, input.attemptId, question);
+      return { ok: true, created: true };
+    } catch (error: unknown) {
+      lastErrorMessage = safeErrorMessage(error);
+      lastStatusCode = parseStatusCodeFromError(lastErrorMessage);
 
       if (attempts >= config.maxRetries || !shouldRetry(lastStatusCode)) {
         break;
@@ -283,8 +321,140 @@ export const deliverAttemptResultToNotion = async (
   }
 
   return {
-    status: "failed",
-    attempts,
+    ok: false,
     errorMessage: lastErrorMessage,
   };
 };
+
+const toFailureItem = (
+  question: NotionDeliveryInput["questions"][number],
+  errorMessage: string,
+): NotionDeliveryFailureItem => {
+  return {
+    category: question.category,
+    level: question.level,
+    questionText: question.questionText,
+    errorMessage,
+  };
+};
+
+const deliverAttemptResultToNotionDetailed = async (
+  input: NotionDeliveryInput,
+  onProgress?: (progress: NotionDeliveryProgress) => Promise<void> | void,
+): Promise<NotionDeliveryDetailedResult> => {
+  const config = getNotionConfig();
+
+  if (!config) {
+    return { status: "skipped", reason: "missing_config" };
+  }
+
+  const totalQuestions = input.questions.length;
+  let processedQuestions = 0;
+  let successQuestions = 0;
+  let failedQuestions = 0;
+  let createdCount = 0;
+  let lastError: string | null = null;
+  const failures: NotionDeliveryFailureItem[] = [];
+
+  for (const question of input.questions) {
+    const result = await syncQuestionWithRetry(config, input, question);
+    processedQuestions += 1;
+
+    if (result.ok) {
+      successQuestions += 1;
+      if (result.created) {
+        createdCount += 1;
+      }
+    } else {
+      failedQuestions += 1;
+      lastError = result.errorMessage;
+      failures.push(toFailureItem(question, result.errorMessage));
+    }
+
+    if (onProgress) {
+      await onProgress({
+        totalQuestions,
+        processedQuestions,
+        successQuestions,
+        failedQuestions,
+        lastError,
+      });
+    }
+  }
+
+  const duplicate = createdCount === 0 && failedQuestions === 0;
+  if (failedQuestions > 0 && successQuestions === 0) {
+    return {
+      status: "failed",
+      totalQuestions,
+      processedQuestions,
+      successQuestions,
+      failedQuestions,
+      duplicate,
+      failures,
+      errorMessage: lastError ?? "notion delivery failed",
+    };
+  }
+
+  if (failedQuestions > 0) {
+    return {
+      status: "completed_with_errors",
+      totalQuestions,
+      processedQuestions,
+      successQuestions,
+      failedQuestions,
+      duplicate,
+      failures,
+    };
+  }
+
+  return {
+    status: "completed",
+    totalQuestions,
+    processedQuestions,
+    successQuestions,
+    failedQuestions,
+    duplicate,
+    failures,
+  };
+};
+
+export const deliverAttemptResultToNotion = async (
+  input: NotionDeliveryInput,
+): Promise<NotionDeliveryResult> => {
+  const result = await deliverAttemptResultToNotionDetailed(input);
+  if (result.status === "skipped") {
+    return result;
+  }
+
+  if (result.status === "completed") {
+    return {
+      status: "sent",
+      attempts: 1,
+      duplicate: result.duplicate,
+    };
+  }
+
+  if (result.status === "completed_with_errors") {
+    return {
+      status: "failed",
+      attempts: 1,
+      errorMessage: `${result.failedQuestions}件の設問送信に失敗しました`,
+    };
+  }
+
+  return {
+    status: "failed",
+    attempts: 1,
+    errorMessage: result.errorMessage,
+  };
+};
+
+export type {
+  NotionDeliveryInput,
+  NotionDeliveryFailureItem,
+  NotionDeliveryProgress,
+  NotionDeliveryDetailedResult,
+};
+
+export { deliverAttemptResultToNotionDetailed, getNotionConfig };
