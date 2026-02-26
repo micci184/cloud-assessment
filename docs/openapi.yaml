@@ -625,6 +625,7 @@ components:
           streakDays,
           totalAnswered,
           weeklyActivity,
+          activityHeatmap,
           categoryProgress,
         ]
       properties:
@@ -647,6 +648,10 @@ components:
           type: integer
           minimum: 0
         weeklyActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeeklyActivityItem"
+        activityHeatmap:
           type: array
           items:
             $ref: "#/components/schemas/WeeklyActivityItem"
