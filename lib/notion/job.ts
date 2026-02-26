@@ -51,16 +51,16 @@ export const runNotionDeliveryJob = async (
     }),
   );
 
-  const startedAt = new Date();
-  await prisma.notionDeliveryJob.update({
-    where: { id: jobId },
-    data: {
-      status: NotionDeliveryJobStatus.IN_PROGRESS,
-      startedAt,
-    },
-  });
-
   try {
+    const startedAt = new Date();
+    await prisma.notionDeliveryJob.update({
+      where: { id: jobId },
+      data: {
+        status: NotionDeliveryJobStatus.IN_PROGRESS,
+        startedAt,
+      },
+    });
+
     const result = await deliverAttemptResultToNotionDetailed(
       input,
       async (progress) => {
@@ -77,6 +77,7 @@ export const runNotionDeliveryJob = async (
           processedQuestions: result.processedQuestions,
           successQuestions: result.successQuestions,
           failedQuestions: result.failedQuestions,
+          duplicateDetected: result.duplicate,
           failedItems: toFailureJson(result.failures),
           finishedAt,
         },
@@ -101,6 +102,7 @@ export const runNotionDeliveryJob = async (
           processedQuestions: result.processedQuestions,
           successQuestions: result.successQuestions,
           failedQuestions: result.failedQuestions,
+          duplicateDetected: result.duplicate,
           lastError: result.failures[0]?.errorMessage ?? null,
           failedItems: toFailureJson(result.failures),
           finishedAt,
@@ -145,6 +147,7 @@ export const runNotionDeliveryJob = async (
         processedQuestions: result.processedQuestions,
         successQuestions: result.successQuestions,
         failedQuestions: result.failedQuestions,
+        duplicateDetected: result.duplicate,
         lastError: result.errorMessage,
         failedItems: toFailureJson(result.failures),
         finishedAt,

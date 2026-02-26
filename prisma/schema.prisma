@@ -99,6 +99,7 @@ model NotionDeliveryJob {
   processedQuestions Int                   @default(0)
   successQuestions  Int                    @default(0)
   failedQuestions   Int                    @default(0)
+  duplicateDetected Boolean                @default(false)
   lastError         String?
   failedItems       Json?
   startedAt         DateTime?

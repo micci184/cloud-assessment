@@ -96,6 +96,7 @@ type NotionDeliveryJobSnapshot = {
   processedQuestions: number;
   successQuestions: number;
   failedQuestions: number;
+  duplicateDetected: boolean;
   lastError: string | null;
 };
 
@@ -272,6 +273,7 @@ export const MeDashboard = () => {
 
       const data = (await response.json()) as {
         status?: string;
+        message?: string;
         reason?: string;
         errorMessage?: string;
         job?: NotionDeliveryJobSnapshot;
@@ -282,8 +284,28 @@ export const MeDashboard = () => {
           ...prev,
           [attemptId]: {
             isSending: false,
-            message: data.errorMessage ?? data.reason ?? "Notion送信に失敗しました",
+            message:
+              data.message ??
+              data.errorMessage ??
+              data.reason ??
+              "Notion送信に失敗しました",
             kind: "error",
+          },
+        }));
+        return;
+      }
+
+      // Fallback synchronous mode response (no job polling)
+      if (data.status === "completed") {
+        const isDuplicate = data.job?.duplicateDetected === true;
+        setDeliveryStateMap((prev) => ({
+          ...prev,
+          [attemptId]: {
+            isSending: false,
+            message: isDuplicate
+              ? "既に送信済みのため新規連携はありません"
+              : "Notionに送信しました",
+            kind: isDuplicate ? "error" : "success",
           },
         }));
         return;
@@ -308,6 +330,7 @@ export const MeDashboard = () => {
 
           const statusData = (await statusResponse.json()) as {
             status?: string;
+            message?: string;
             job?: NotionDeliveryJobSnapshot;
           };
           const job = statusData.job;
@@ -329,6 +352,18 @@ export const MeDashboard = () => {
           }
 
           if (statusData.status === "completed") {
+            if (job?.duplicateDetected) {
+              setDeliveryStateMap((prev) => ({
+                ...prev,
+                [attemptId]: {
+                  isSending: false,
+                  message: "既に送信済みのため新規連携はありません",
+                  kind: "error",
+                },
+              }));
+              return;
+            }
+
             setDeliveryStateMap((prev) => ({
               ...prev,
               [attemptId]: {
@@ -340,24 +375,17 @@ export const MeDashboard = () => {
             return;
           }
 
-          if (statusData.status === "completed_with_errors") {
-            setDeliveryStateMap((prev) => ({
-              ...prev,
-              [attemptId]: {
-                isSending: false,
-                message: `一部送信に失敗しました（失敗 ${job?.failedQuestions ?? 0} 件）`,
-                kind: "error",
-              },
-            }));
-            return;
-          }
-
           if (statusData.status === "failed") {
             setDeliveryStateMap((prev) => ({
               ...prev,
               [attemptId]: {
                 isSending: false,
-                message: job?.lastError ?? "Notion送信に失敗しました",
+                message:
+                  statusData.message ??
+                  job?.lastError ??
+                  (job?.failedQuestions
+                    ? `Notion送信に失敗しました（失敗 ${job.failedQuestions} 件）`
+                    : "Notion送信に失敗しました"),
                 kind: "error",
               },
             }));
@@ -402,7 +430,7 @@ export const MeDashboard = () => {
         ...prev,
         [attemptId]: {
           isSending: false,
-          message: data.reason ?? "Notion送信を開始できませんでした",
+          message: data.message ?? data.reason ?? "Notion送信を開始できませんでした",
           kind: "error",
         },
       }));

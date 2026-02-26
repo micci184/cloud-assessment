@@ -350,6 +350,12 @@ paths:
           schema:
             type: string
       responses:
+        "200":
+          description: フォールバック即時実行で送信完了
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotionDeliveryJobStatusResponse"
         "202":
           description: ジョブ受付または既存ジョブ進行中
           content:
@@ -367,6 +373,7 @@ paths:
                       processedQuestions: 0
                       successQuestions: 0
                       failedQuestions: 0
+                      duplicateDetected: false
                       lastError: null
         "400":
           $ref: "#/components/responses/BadRequest"
@@ -767,7 +774,7 @@ components:
     NotionDeliveryJob:
       type: object
       required:
-        [id, totalQuestions, processedQuestions, successQuestions, failedQuestions]
+        [id, totalQuestions, processedQuestions, successQuestions, failedQuestions, duplicateDetected]
       properties:
         id:
           type: string
@@ -783,6 +790,8 @@ components:
         failedQuestions:
           type: integer
           minimum: 0
+        duplicateDetected:
+          type: boolean
         startedAt:
           type: string
           format: date-time
@@ -825,7 +834,7 @@ components:
       properties:
         status:
           type: string
-          enum: [idle, queued, in_progress, completed, completed_with_errors, failed]
+          enum: [idle, queued, in_progress, completed, failed]
         job:
           $ref: "#/components/schemas/NotionDeliveryJob"
           nullable: true
@@ -833,22 +842,3 @@ components:
           type: string
           nullable: true
 
-    NotionDeliveryResponse:
-      type: object
-      required: [status]
-      properties:
-        status:
-          type: string
-          enum: [sent, skipped, failed]
-        attempts:
-          type: integer
-          description: 送信を試みた回数
-        duplicate:
-          type: boolean
-          description: 対象設問がすべて既存で新規作成がなかった場合はtrue
-        reason:
-          type: string
-          description: skipped時の理由
-        errorMessage:
-          type: string
-          description: failed時のエラー内容

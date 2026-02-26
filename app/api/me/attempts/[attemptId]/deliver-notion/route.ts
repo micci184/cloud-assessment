@@ -6,7 +6,10 @@ import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { isValidOrigin } from "@/lib/auth/origin";
 import { prisma } from "@/lib/db/prisma";
-import { type NotionDeliveryInput } from "@/lib/notion/delivery";
+import {
+  deliverAttemptResultToNotionDetailed,
+  type NotionDeliveryInput,
+} from "@/lib/notion/delivery";
 import { runNotionDeliveryJob } from "@/lib/notion/job";
 
 type RouteContext = {
@@ -16,6 +19,40 @@ type RouteContext = {
 const attemptParamsSchema = z.object({
   attemptId: z.string().min(1),
 });
+
+const ACTIVE_NOTION_JOB_STATUSES: NotionDeliveryJobStatus[] = [
+  NotionDeliveryJobStatus.QUEUED,
+  NotionDeliveryJobStatus.IN_PROGRESS,
+];
+
+const getNotionDeliveryJobDelegate = () => {
+  const delegate = prisma.notionDeliveryJob;
+  if (delegate === undefined) {
+    return null;
+  }
+  return delegate;
+};
+
+const findActiveNotionDeliveryJob = async (
+  attemptId: string,
+  userId: string,
+) => {
+  const notionDeliveryJob = getNotionDeliveryJobDelegate();
+  if (!notionDeliveryJob) {
+    return null;
+  }
+
+  return notionDeliveryJob.findFirst({
+    where: {
+      attemptId,
+      userId,
+      status: {
+        in: ACTIVE_NOTION_JOB_STATUSES,
+      },
+    },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+  });
+};
 
 const buildDeliveryInput = (
   attempt: {
@@ -83,9 +120,10 @@ const serializeFailedItems = (
       continue;
     }
     const typedItem = item as Record<string, unknown>;
+    const parsedLevel = Number.parseInt(String(typedItem.level ?? ""), 10);
     serialized.push({
       category: String(typedItem.category ?? ""),
-      level: Number(typedItem.level ?? 0),
+      level: Number.isFinite(parsedLevel) ? parsedLevel : 0,
       questionText: String(typedItem.questionText ?? ""),
       errorMessage: String(typedItem.errorMessage ?? ""),
     });
@@ -160,33 +198,100 @@ const POST = async (
     }
 
     const { attemptId } = parsedParams.data;
+    const notionDeliveryJob = getNotionDeliveryJobDelegate();
 
     const { attempt, errorResponse } = await loadAttemptForDelivery(attemptId, user.id);
     if (errorResponse || !attempt) {
       return errorResponse ?? messageResponse("attempt not found", 404);
     }
 
-    const existingJob = await prisma.notionDeliveryJob.findFirst({
-      where: {
-        attemptId: attempt.id,
-        userId: user.id,
-        status: {
-          in: [NotionDeliveryJobStatus.QUEUED, NotionDeliveryJobStatus.IN_PROGRESS],
+    // Fallback path: if Prisma Client does not include NotionDeliveryJob model yet,
+    // deliver immediately instead of returning 503 to keep API usable.
+    if (!notionDeliveryJob) {
+      const input = buildDeliveryInput(attempt);
+      const deliveryResult = await deliverAttemptResultToNotionDetailed(input);
+
+      if (deliveryResult.status === "completed") {
+        return NextResponse.json(
+          {
+            status: "completed",
+            message: deliveryResult.duplicate
+              ? "already delivered"
+              : "notion delivery completed",
+            job: {
+              id: "",
+              totalQuestions: deliveryResult.totalQuestions,
+              processedQuestions: deliveryResult.processedQuestions,
+              successQuestions: deliveryResult.successQuestions,
+              failedQuestions: deliveryResult.failedQuestions,
+              duplicateDetected: deliveryResult.duplicate,
+              lastError: null,
+            },
+          },
+          { status: 200 },
+        );
+      }
+
+      if (deliveryResult.status === "completed_with_errors") {
+        return NextResponse.json(
+          {
+            status: "failed",
+            message: `partial failure: ${deliveryResult.failedQuestions} items failed`,
+            job: {
+              id: "",
+              totalQuestions: deliveryResult.totalQuestions,
+              processedQuestions: deliveryResult.processedQuestions,
+              successQuestions: deliveryResult.successQuestions,
+              failedQuestions: deliveryResult.failedQuestions,
+              duplicateDetected: deliveryResult.duplicate,
+              lastError: deliveryResult.failures[0]?.errorMessage ?? null,
+            },
+          },
+          { status: 502 },
+        );
+      }
+
+      if (deliveryResult.status === "failed") {
+        return NextResponse.json(
+          {
+            status: "failed",
+            message: deliveryResult.errorMessage,
+            job: {
+              id: "",
+              totalQuestions: deliveryResult.totalQuestions,
+              processedQuestions: deliveryResult.processedQuestions,
+              successQuestions: deliveryResult.successQuestions,
+              failedQuestions: deliveryResult.failedQuestions,
+              duplicateDetected: deliveryResult.duplicate,
+              lastError: deliveryResult.errorMessage,
+            },
+          },
+          { status: 502 },
+        );
+      }
+
+      return NextResponse.json(
+        {
+          status: "failed",
+          message: "missing notion config",
         },
-      },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    });
+        { status: 502 },
+      );
+    }
+
+    const existingJob = await findActiveNotionDeliveryJob(attempt.id, user.id);
 
     if (existingJob) {
       return NextResponse.json(
         {
-          status: "in_progress",
+          status: existingJob.status.toLowerCase(),
           job: {
             id: existingJob.id,
             totalQuestions: existingJob.totalQuestions,
             processedQuestions: existingJob.processedQuestions,
             successQuestions: existingJob.successQuestions,
             failedQuestions: existingJob.failedQuestions,
+            duplicateDetected: existingJob.duplicateDetected,
             lastError: existingJob.lastError,
           },
         },
@@ -194,14 +299,42 @@ const POST = async (
       );
     }
 
-    const job = await prisma.notionDeliveryJob.create({
-      data: {
-        attemptId: attempt.id,
-        userId: user.id,
-        status: NotionDeliveryJobStatus.QUEUED,
-        totalQuestions: attempt.questions.length,
-      },
-    });
+    let job: Awaited<ReturnType<typeof notionDeliveryJob.create>>;
+    try {
+      job = await notionDeliveryJob.create({
+        data: {
+          attemptId: attempt.id,
+          userId: user.id,
+          status: NotionDeliveryJobStatus.QUEUED,
+          totalQuestions: attempt.questions.length,
+        },
+      });
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        const concurrentJob = await findActiveNotionDeliveryJob(attempt.id, user.id);
+        if (concurrentJob) {
+          return NextResponse.json(
+            {
+              status: concurrentJob.status.toLowerCase(),
+              job: {
+                id: concurrentJob.id,
+                totalQuestions: concurrentJob.totalQuestions,
+                processedQuestions: concurrentJob.processedQuestions,
+                successQuestions: concurrentJob.successQuestions,
+                failedQuestions: concurrentJob.failedQuestions,
+                duplicateDetected: concurrentJob.duplicateDetected,
+                lastError: concurrentJob.lastError,
+              },
+            },
+            { status: 202 },
+          );
+        }
+      }
+      throw error;
+    }
 
     const input = buildDeliveryInput(attempt);
     void runNotionDeliveryJob(job.id, input);
@@ -215,6 +348,7 @@ const POST = async (
           processedQuestions: job.processedQuestions,
           successQuestions: job.successQuestions,
           failedQuestions: job.failedQuestions,
+          duplicateDetected: job.duplicateDetected,
           lastError: job.lastError,
         },
       },
@@ -241,6 +375,17 @@ const GET = async (
       return messageResponse("invalid attempt id", 400);
     }
     const { attemptId } = parsedParams.data;
+    const notionDeliveryJob = getNotionDeliveryJobDelegate();
+    if (!notionDeliveryJob) {
+      return NextResponse.json(
+        {
+          status: "idle",
+          message:
+            "notion delivery job model is unavailable. fallback mode is active for POST",
+        },
+        { status: 200 },
+      );
+    }
 
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },
@@ -253,7 +398,7 @@ const GET = async (
       return messageResponse("forbidden", 403);
     }
 
-    const job = await prisma.notionDeliveryJob.findFirst({
+    const job = await notionDeliveryJob.findFirst({
       where: { attemptId, userId: user.id },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     });
@@ -262,16 +407,26 @@ const GET = async (
       return NextResponse.json({ status: "idle" }, { status: 200 });
     }
 
+    const normalizedStatus =
+      job.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
+        ? "failed"
+        : job.status.toLowerCase();
+    const message =
+      job.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
+        ? `一部送信に失敗しました（失敗 ${job.failedQuestions} 件）`
+        : null;
     const failedItems = serializeFailedItems(job.failedItems);
     return NextResponse.json(
       {
-        status: job.status.toLowerCase(),
+        status: normalizedStatus,
+        message,
         job: {
           id: job.id,
           totalQuestions: job.totalQuestions,
           processedQuestions: job.processedQuestions,
           successQuestions: job.successQuestions,
           failedQuestions: job.failedQuestions,
+          duplicateDetected: job.duplicateDetected,
           lastError: job.lastError,
           failedItems,
           startedAt: job.startedAt,
