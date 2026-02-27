@@ -89,8 +89,10 @@ const LoginPage = () => {
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
 
-        if (response.status === 409) {
-          setErrors({ form: "このメールアドレスは既に登録されています" });
+        if (mode === "signup" && response.status === 400) {
+          setErrors({
+            form: "アカウント作成に失敗しました。入力内容をご確認ください",
+          });
         } else if (response.status === 401) {
           setErrors({ form: "メールアドレスまたはパスワードが正しくありません" });
         } else if (response.status === 429) {
