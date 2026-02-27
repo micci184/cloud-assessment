@@ -39,8 +39,8 @@ type QuestionDetail = {
     level: number;
     questionText: string;
     choices: string[];
-    answerIndex: number;
-    explanation: string;
+    answerIndex?: number;
+    explanation?: string;
   };
 };
 
@@ -1222,10 +1222,12 @@ const AttemptDetailView = ({ attempt }: { attempt: AttemptDetail }) => {
                 })}
               </div>
 
-              <div className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400">
-                <span className="font-medium">解説: </span>
-                {q.question.explanation}
-              </div>
+              {q.question.explanation && (
+                <div className="rounded-lg bg-neutral-50 px-3 py-2 text-sm text-neutral-600 dark:bg-neutral-800/50 dark:text-neutral-400">
+                  <span className="font-medium">解説: </span>
+                  {q.question.explanation}
+                </div>
+              )}
             </div>
           ))}
         </div>

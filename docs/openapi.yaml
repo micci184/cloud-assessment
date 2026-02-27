@@ -115,7 +115,7 @@ paths:
   /api/attempts/{attemptId}/answer:
     post:
       tags: [Attempts]
-      summary: 回答保存
+      summary: 回答保存（1問につき1回のみ）
       security:
         - cookieAuth: []
       parameters:
@@ -503,11 +503,12 @@ components:
 
     AnswerAttemptResponse:
       type: object
-      required: [message]
+      required: [attemptQuestionId, selectedIndex]
       properties:
-        message:
+        attemptQuestionId:
           type: string
-          example: saved
+        selectedIndex:
+          type: integer
 
     CategoryBreakdownItem:
       type: object
@@ -565,12 +566,13 @@ components:
         isCorrect:
           type: boolean
           nullable: true
+          description: COMPLETED時のみ非null（IN_PROGRESS中はnull）
         answerIndex:
           type: integer
-          description: finalize後のみ返却
+          description: COMPLETED時のみ返却
         explanation:
           type: string
-          description: finalize後のみ返却
+          description: COMPLETED時のみ返却
         category:
           type: string
 

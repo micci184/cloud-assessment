@@ -76,6 +76,10 @@ export const POST = async (
       return messageResponse("question not found", 404);
     }
 
+    if (attemptQuestion.selectedIndex !== null) {
+      return messageResponse("この問題は既に回答済みです", 400);
+    }
+
     const isCorrect = selectedIndex === attemptQuestion.question.answerIndex;
 
     const updated = await prisma.attemptQuestion.update({
@@ -90,7 +94,6 @@ export const POST = async (
     return NextResponse.json({
       attemptQuestionId: updated.id,
       selectedIndex: updated.selectedIndex,
-      isCorrect: updated.isCorrect,
     });
   } catch (error) {
     return internalServerErrorResponse(error);
