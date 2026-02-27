@@ -64,7 +64,7 @@ test("異常系: 重複メールでsignupするとエラーになる", async ({ 
 
   await signup(page, email, password);
   await expect(
-    page.getByText("このメールアドレスは既に登録されています"),
+    page.getByText("アカウント作成に失敗しました。入力内容をご確認ください"),
   ).toBeVisible();
 });
 
