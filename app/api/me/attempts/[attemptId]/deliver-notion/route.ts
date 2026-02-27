@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { NotionDeliveryJobStatus, Prisma } from "@prisma/client";
-import { z } from "zod";
 
+import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { isValidOrigin } from "@/lib/auth/origin";
@@ -15,10 +15,6 @@ import { runNotionDeliveryJob } from "@/lib/notion/job";
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
 };
-
-const attemptParamsSchema = z.object({
-  attemptId: z.string().min(1),
-});
 
 const ACTIVE_NOTION_JOB_STATUSES: NotionDeliveryJobStatus[] = [
   NotionDeliveryJobStatus.QUEUED,
