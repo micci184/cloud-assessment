@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 
 const answerSchema = z.object({
-  attemptQuestionId: z.string().min(1),
+  attemptQuestionId: z.string().min(1).max(100, "attemptQuestionId is too long"),
   selectedIndex: z.number().int().min(0).max(3),
 });
 
@@ -34,7 +35,15 @@ export const POST = async (
       return messageResponse("unauthorized", 401);
     }
 
-    const { attemptId } = await context.params;
+    const params = await context.params;
+    const parsedParams = attemptParamsSchema.safeParse(params);
+    if (!parsedParams.success) {
+      return messageResponse(
+        parsedParams.error.issues[0]?.message ?? "invalid attemptId",
+        400,
+      );
+    }
+    const { attemptId } = parsedParams.data;
 
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },

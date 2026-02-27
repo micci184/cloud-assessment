@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
@@ -19,7 +20,15 @@ export const GET = async (
       return messageResponse("unauthorized", 401);
     }
 
-    const { attemptId } = await context.params;
+    const params = await context.params;
+    const parsedParams = attemptParamsSchema.safeParse(params);
+    if (!parsedParams.success) {
+      return messageResponse(
+        parsedParams.error.issues[0]?.message ?? "invalid attemptId",
+        400,
+      );
+    }
+    const { attemptId } = parsedParams.data;
 
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },

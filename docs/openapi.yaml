@@ -450,9 +450,11 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         password:
           type: string
           minLength: 8
+          maxLength: 128
           description: 英大文字・英小文字・数字を各1文字以上含む
 
     LoginRequest:
@@ -462,8 +464,11 @@ components:
         email:
           type: string
           format: email
+          maxLength: 254
         password:
           type: string
+          minLength: 1
+          maxLength: 128
 
     AuthSuccessResponse:
       type: object
@@ -481,7 +486,9 @@ components:
           type: array
           items:
             type: string
+            maxLength: 200
           minItems: 1
+          maxItems: 100
         level:
           type: integer
           enum: [1, 2, 3]
@@ -502,9 +509,12 @@ components:
       properties:
         attemptQuestionId:
           type: string
+          minLength: 1
+          maxLength: 100
         selectedIndex:
           type: integer
           minimum: 0
+          maximum: 3
 
     AnswerAttemptResponse:
       type: object

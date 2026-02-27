@@ -8,8 +8,9 @@ import { prisma } from "@/lib/db/prisma";
 
 const createAttemptSchema = z.object({
   categories: z
-    .array(z.string().min(1))
-    .min(1, "カテゴリを1つ以上選択してください"),
+    .array(z.string().min(1).max(200, "カテゴリ名が長すぎます"))
+    .min(1, "カテゴリを1つ以上選択してください")
+    .max(100, "カテゴリ数が多すぎます"),
   level: z.number().int().min(1).max(3),
   count: z.number().int().min(1).max(50),
 });
