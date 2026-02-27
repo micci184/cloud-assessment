@@ -1,19 +1,10 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
+import { createAttemptSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-
-const createAttemptSchema = z.object({
-  categories: z
-    .array(z.string().min(1).max(200, "カテゴリ名が長すぎます"))
-    .min(1, "カテゴリを1つ以上選択してください")
-    .max(100, "カテゴリ数が多すぎます"),
-  level: z.number().int().min(1).max(3),
-  count: z.number().int().min(1).max(50),
-});
 
 const shuffleInPlace = <T>(items: T[]): T[] => {
   const shuffled = [...items];

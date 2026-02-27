@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
-import { attemptParamsSchema } from "@/lib/attempt/schemas";
+import { answerSchema, attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-
-const answerSchema = z.object({
-  attemptQuestionId: z.string().min(1).max(100, "attemptQuestionId is too long"),
-  selectedIndex: z.number().int().min(0).max(3),
-});
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;

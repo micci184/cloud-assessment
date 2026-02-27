@@ -1,27 +1,12 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
+import {
+  attemptsQuerySchema,
+  DEFAULT_ATTEMPTS_PAGE_SIZE,
+} from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-
-const DEFAULT_PAGE_SIZE = 10;
-const MAX_PAGE_SIZE = 50;
-
-const attemptsQuerySchema = z.object({
-  page: z
-    .string()
-    .regex(/^\d+$/)
-    .transform(Number)
-    .refine((value) => value >= 1)
-    .optional(),
-  pageSize: z
-    .string()
-    .regex(/^\d+$/)
-    .transform(Number)
-    .refine((value) => value >= 1 && value <= MAX_PAGE_SIZE)
-    .optional(),
-});
 
 type AttemptWithResult = {
   id: string;
@@ -66,7 +51,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       return messageResponse("invalid query parameters", 400);
     }
     const requestedPage = queryResult.data.page ?? 1;
-    const pageSize = queryResult.data.pageSize ?? DEFAULT_PAGE_SIZE;
+    const pageSize = queryResult.data.pageSize ?? DEFAULT_ATTEMPTS_PAGE_SIZE;
 
     const [totalCount, latestCompleted, latestInProgress] = await Promise.all([
       prisma.attempt.count({
