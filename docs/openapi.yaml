@@ -28,8 +28,13 @@ paths:
                 $ref: "#/components/schemas/AuthSuccessResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "409":
-          description: メール重複
+        "429":
+          description: 試行回数超過（レート制限）
+          headers:
+            Retry-After:
+              description: 次回試行までの待機秒数
+              schema:
+                type: integer
           content:
             application/json:
               schema:

@@ -6,6 +6,11 @@ import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { hashPassword } from "@/lib/auth/password";
+import {
+  checkSignupRateLimit,
+  getSignupRateLimitKey,
+  registerSignupAttempt,
+} from "@/lib/auth/signup-rate-limit";
 import { signupInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
 import { prisma } from "@/lib/db/prisma";
@@ -27,6 +32,33 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       return messageResponse(
         parsed.error.issues[0]?.message ?? "invalid request",
         400,
+      );
+    }
+
+    const rateLimitKey = getSignupRateLimitKey(request);
+    const rateLimitCheck = checkSignupRateLimit(rateLimitKey);
+    if (!rateLimitCheck.allowed) {
+      return NextResponse.json(
+        { message: "too many signup attempts. please try again later" },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(rateLimitCheck.retryAfterSeconds),
+          },
+        },
+      );
+    }
+
+    const attemptResult = registerSignupAttempt(rateLimitKey);
+    if (!attemptResult.allowed) {
+      return NextResponse.json(
+        { message: "too many signup attempts. please try again later" },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(attemptResult.retryAfterSeconds),
+          },
+        },
       );
     }
 
@@ -58,7 +90,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return messageResponse("email already exists", 409);
+      return messageResponse("signup failed", 400);
     }
 
     return internalServerErrorResponse(error);
