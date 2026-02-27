@@ -52,19 +52,25 @@ export const GET = async (
       return messageResponse("forbidden", 403);
     }
 
+    const isCompleted = attempt.status === "COMPLETED";
+
     const questions = attempt.questions.map((aq) => ({
       attemptQuestionId: aq.id,
       order: aq.order,
       selectedIndex: aq.selectedIndex,
-      isCorrect: aq.isCorrect,
+      isCorrect: isCompleted ? aq.isCorrect : null,
       question: {
         id: aq.question.id,
         category: aq.question.category,
         level: aq.question.level,
         questionText: aq.question.questionText,
         choices: aq.question.choices,
-        answerIndex: aq.question.answerIndex,
-        explanation: aq.question.explanation,
+        ...(isCompleted
+          ? {
+              answerIndex: aq.question.answerIndex,
+              explanation: aq.question.explanation,
+            }
+          : {}),
       },
     }));
 

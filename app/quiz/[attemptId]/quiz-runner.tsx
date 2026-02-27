@@ -124,7 +124,6 @@ export const QuizRunner = ({ attemptId }: Props) => {
       const result = (await response.json()) as {
         attemptQuestionId: string;
         selectedIndex: number;
-        isCorrect: boolean;
       };
 
       setAttempt((prev) => {
@@ -135,7 +134,6 @@ export const QuizRunner = ({ attemptId }: Props) => {
             ? {
                 ...q,
                 selectedIndex: result.selectedIndex,
-                isCorrect: result.isCorrect,
               }
             : q,
         );
