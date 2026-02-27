@@ -1,21 +1,21 @@
 import { NextResponse } from "next/server";
 
+import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
 import { clearSessionCookie } from "@/lib/auth/cookie";
-import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
-import { isValidOrigin } from "@/lib/auth/origin";
 import { prisma } from "@/lib/db/prisma";
 
 export const POST = async (request: Request): Promise<NextResponse> => {
   try {
-    if (!isValidOrigin(request)) {
-      return messageResponse("forbidden origin", 403);
+    const invalidOriginResponse = requireValidOrigin(request, "forbidden origin");
+    if (invalidOriginResponse) {
+      return invalidOriginResponse;
     }
 
-    const user = await getUserFromRequest(request);
-
-    if (!user) {
-      return messageResponse("unauthorized", 401);
+    const { user, response: unauthorizedResponse } =
+      await requireAuthenticatedUser(request);
+    if (unauthorizedResponse || !user) {
+      return unauthorizedResponse ?? messageResponse("unauthorized", 401);
     }
 
     // Invalidate all existing sessions by rotating tokenVersion.

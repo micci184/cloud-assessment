@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
-import { getUserFromRequest } from "@/lib/auth/guards";
-import { isValidOrigin } from "@/lib/auth/origin";
+import { attemptParamsSchema } from "@/lib/attempt/schemas";
+import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -20,17 +20,26 @@ export const POST = async (
   context: RouteContext,
 ): Promise<NextResponse> => {
   try {
-    if (!isValidOrigin(request)) {
-      return messageResponse("invalid origin", 403);
+    const invalidOriginResponse = requireValidOrigin(request);
+    if (invalidOriginResponse) {
+      return invalidOriginResponse;
     }
 
-    const user = await getUserFromRequest(request);
-
-    if (!user) {
-      return messageResponse("unauthorized", 401);
+    const { user, response: unauthorizedResponse } =
+      await requireAuthenticatedUser(request);
+    if (unauthorizedResponse || !user) {
+      return unauthorizedResponse ?? messageResponse("unauthorized", 401);
     }
 
-    const { attemptId } = await context.params;
+    const params = await context.params;
+    const parsedParams = attemptParamsSchema.safeParse(params);
+    if (!parsedParams.success) {
+      return messageResponse(
+        parsedParams.error.issues[0]?.message ?? "invalid attemptId",
+        400,
+      );
+    }
+    const { attemptId } = parsedParams.data;
 
     const attempt = await prisma.attempt.findUnique({
       where: { id: attemptId },
