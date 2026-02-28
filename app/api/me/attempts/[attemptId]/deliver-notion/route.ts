@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
 import { NotionDeliveryJobStatus, Prisma } from "@prisma/client";
 
+import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
 import { attemptParamsSchema } from "@/lib/attempt/schemas";
-import { getUserFromRequest } from "@/lib/auth/guards";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
-import { isValidOrigin } from "@/lib/auth/origin";
 import { prisma } from "@/lib/db/prisma";
 import {
   deliverAttemptResultToNotionDetailed,
@@ -195,14 +194,15 @@ const POST = async (
   context: RouteContext,
 ): Promise<NextResponse> => {
   try {
-    if (!isValidOrigin(request)) {
-      return messageResponse("invalid origin", 403);
+    const invalidOriginResponse = requireValidOrigin(request);
+    if (invalidOriginResponse) {
+      return invalidOriginResponse;
     }
 
-    const user = await getUserFromRequest(request);
-
-    if (!user) {
-      return messageResponse("unauthorized", 401);
+    const { user, response: unauthorizedResponse } =
+      await requireAuthenticatedUser(request);
+    if (unauthorizedResponse || !user) {
+      return unauthorizedResponse ?? messageResponse("unauthorized", 401);
     }
 
     const rawParams = await context.params;
@@ -384,9 +384,10 @@ const GET = async (
   context: RouteContext,
 ): Promise<NextResponse> => {
   try {
-    const user = await getUserFromRequest(request);
-    if (!user) {
-      return messageResponse("unauthorized", 401);
+    const { user, response: unauthorizedResponse } =
+      await requireAuthenticatedUser(request);
+    if (unauthorizedResponse || !user) {
+      return unauthorizedResponse ?? messageResponse("unauthorized", 401);
     }
 
     const rawParams = await context.params;

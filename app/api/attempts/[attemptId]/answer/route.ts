@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { answerSchema, attemptParamsSchema } from "@/lib/attempt/schemas";
-import { getUserFromRequest } from "@/lib/auth/guards";
-import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
+import {
+  requireAuthenticatedUser,
+  requireJsonContentType,
+  requireValidOrigin,
+} from "@/lib/api/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 
@@ -15,18 +18,20 @@ export const POST = async (
   context: RouteContext,
 ): Promise<NextResponse> => {
   try {
-    if (!isValidOrigin(request)) {
-      return messageResponse("invalid origin", 403);
+    const invalidOriginResponse = requireValidOrigin(request);
+    if (invalidOriginResponse) {
+      return invalidOriginResponse;
     }
 
-    if (!isJsonContentType(request)) {
-      return messageResponse("content-type must be application/json", 415);
+    const invalidContentTypeResponse = requireJsonContentType(request);
+    if (invalidContentTypeResponse) {
+      return invalidContentTypeResponse;
     }
 
-    const user = await getUserFromRequest(request);
-
-    if (!user) {
-      return messageResponse("unauthorized", 401);
+    const { user, response: unauthorizedResponse } =
+      await requireAuthenticatedUser(request);
+    if (unauthorizedResponse || !user) {
+      return unauthorizedResponse ?? messageResponse("unauthorized", 401);
     }
 
     const params = await context.params;

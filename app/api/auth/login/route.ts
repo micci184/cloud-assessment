@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+import {
+  requireJsonContentType,
+  requireValidOrigin,
+} from "@/lib/api/guards";
 import { setSessionCookie } from "@/lib/auth/cookie";
 import { getAuthSecret } from "@/lib/auth/config";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
@@ -9,19 +13,20 @@ import {
   getLoginRateLimitKey,
   registerFailedLoginAttempt,
 } from "@/lib/auth/login-rate-limit";
-import { isValidOrigin, isJsonContentType } from "@/lib/auth/origin";
 import { verifyPassword } from "@/lib/auth/password";
 import { loginInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
 import { prisma } from "@/lib/db/prisma";
 
 export const POST = async (request: Request): Promise<NextResponse> => {
-  if (!isValidOrigin(request)) {
-    return messageResponse("forbidden origin", 403);
+  const invalidOriginResponse = requireValidOrigin(request, "forbidden origin");
+  if (invalidOriginResponse) {
+    return invalidOriginResponse;
   }
 
-  if (!isJsonContentType(request)) {
-    return messageResponse("content-type must be application/json", 415);
+  const invalidContentTypeResponse = requireJsonContentType(request);
+  if (invalidContentTypeResponse) {
+    return invalidContentTypeResponse;
   }
 
   try {
