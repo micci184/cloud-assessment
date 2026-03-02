@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { CategoryScore } from "@/lib/quiz/types";
+
 type QuestionData = {
   attemptQuestionId: string;
   order: number;
@@ -17,13 +19,6 @@ type QuestionData = {
     answerIndex?: number;
     explanation?: string;
   };
-};
-
-type CategoryScore = {
-  category: string;
-  total: number;
-  correct: number;
-  percent: number;
 };
 
 type ResultData = {
@@ -344,7 +339,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
           aria-label={`問題 ${currentIndex + 1} の選択肢`}
           className="flex flex-col gap-3"
         >
-          {(currentQuestion.question.choices as string[]).map(
+          {currentQuestion.question.choices.map(
             (choice, index) => {
               const canAnswer =
                 currentQuestion.selectedIndex === null && !isSubmitting;
@@ -501,7 +496,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
 
   if (!result) return null;
 
-  const breakdown = result.categoryBreakdown as CategoryScore[];
+  const breakdown = result.categoryBreakdown;
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
@@ -575,7 +570,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
             </p>
 
             <div className="mb-3 flex flex-col gap-1.5">
-              {(q.question.choices as string[]).map((choice, i) => {
+              {q.question.choices.map((choice, i) => {
                 const isAnswer = i === q.question.answerIndex;
                 const isUserChoice = i === q.selectedIndex;
 

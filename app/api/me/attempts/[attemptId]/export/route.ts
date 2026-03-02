@@ -8,6 +8,7 @@ import {
   createAttemptExportPayload,
 } from "@/lib/attempt/export";
 import { prisma } from "@/lib/db/prisma";
+import { parseCategoryBreakdown, parseQuestionChoices } from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -91,19 +92,16 @@ export const GET = async (
       },
       result: {
         overallPercent: attempt.result.overallPercent,
-        categoryBreakdown: attempt.result.categoryBreakdown as {
-          category: string;
-          total: number;
-          correct: number;
-          percent: number;
-        }[],
+        categoryBreakdown: parseCategoryBreakdown(
+          attempt.result.categoryBreakdown,
+        ),
       },
       questions: attempt.questions.map((question) => ({
         order: question.order,
         category: question.question.category,
         level: question.question.level,
         questionText: question.question.questionText,
-        choices: question.question.choices as string[],
+        choices: parseQuestionChoices(question.question.choices),
         answerIndex: question.question.answerIndex,
         selectedIndex: question.selectedIndex,
         isCorrect: question.isCorrect,

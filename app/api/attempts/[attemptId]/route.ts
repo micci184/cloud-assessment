@@ -4,6 +4,7 @@ import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
+import { parseCategoryBreakdown, parseQuestionChoices } from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -72,7 +73,7 @@ export const GET = async (
         category: aq.question.category,
         level: aq.question.level,
         questionText: aq.question.questionText,
-        choices: aq.question.choices,
+        choices: parseQuestionChoices(aq.question.choices),
         ...(attempt.status === "COMPLETED"
           ? {
               answerIndex: aq.question.answerIndex,
@@ -92,7 +93,9 @@ export const GET = async (
       result: attempt.result
         ? {
             overallPercent: attempt.result.overallPercent,
-            categoryBreakdown: attempt.result.categoryBreakdown,
+            categoryBreakdown: parseCategoryBreakdown(
+              attempt.result.categoryBreakdown,
+            ),
           }
         : null,
     });

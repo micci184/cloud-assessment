@@ -1,4 +1,6 @@
-import type { AttemptDetail, CategoryScore } from "../types";
+import type { CategoryScore } from "@/lib/quiz/types";
+
+import type { AttemptDetail } from "../types";
 
 type Props = {
   attempt: AttemptDetail;
@@ -24,7 +26,7 @@ export const AttemptDetailView = ({ attempt }: Props) => {
             カテゴリ別正答率
           </h3>
           <div className="space-y-2">
-            {(attempt.result.categoryBreakdown as CategoryScore[]).map((cat) => (
+            {attempt.result.categoryBreakdown.map((cat: CategoryScore) => (
               <div key={cat.category} className="flex items-center gap-3">
                 <span className="w-28 shrink-0 text-sm text-neutral-600 dark:text-neutral-400">
                   {cat.category}
@@ -71,7 +73,7 @@ export const AttemptDetailView = ({ attempt }: Props) => {
               <p className="mb-3 text-sm leading-relaxed">{q.question.questionText}</p>
 
               <div className="mb-3 flex flex-col gap-1.5">
-                {(q.question.choices as string[]).map((choice, i) => {
+                {q.question.choices.map((choice, i) => {
                   const isAnswer = i === q.question.answerIndex;
                   const isUserChoice = i === q.selectedIndex;
 

@@ -7,8 +7,9 @@ import {
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
+import { parseCategoryBreakdown } from "@/lib/quiz/parsers";
 
-type AttemptWithResult = {
+type AttemptSummarySource = {
   id: string;
   status: "IN_PROGRESS" | "COMPLETED";
   filters: unknown;
@@ -20,7 +21,7 @@ type AttemptWithResult = {
   } | null;
 };
 
-const toAttemptSummary = (attempt: AttemptWithResult) => ({
+const toAttemptSummary = (attempt: AttemptSummarySource) => ({
   id: attempt.id,
   status: attempt.status,
   filters: attempt.filters,
@@ -29,7 +30,9 @@ const toAttemptSummary = (attempt: AttemptWithResult) => ({
   result: attempt.result
     ? {
         overallPercent: attempt.result.overallPercent,
-        categoryBreakdown: attempt.result.categoryBreakdown,
+        categoryBreakdown: parseCategoryBreakdown(
+          attempt.result.categoryBreakdown,
+        ),
       }
     : null,
 });
@@ -103,9 +106,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       },
     });
 
-    const data = pagedAttempts.map((attempt) =>
-      toAttemptSummary(attempt as AttemptWithResult),
-    );
+    const data = pagedAttempts.map(toAttemptSummary);
 
     return NextResponse.json({
       attempts: data,
@@ -117,10 +118,10 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       },
       summary: {
         latestCompleted: latestCompleted
-          ? toAttemptSummary(latestCompleted as AttemptWithResult)
+          ? toAttemptSummary(latestCompleted)
           : null,
         latestInProgress: latestInProgress
-          ? toAttemptSummary(latestInProgress as AttemptWithResult)
+          ? toAttemptSummary(latestInProgress)
           : null,
       },
     });
