@@ -33,106 +33,6 @@ const buildChoiceOrder = (choicesCount: number): number[] => {
   return shuffleInPlace(indexes);
 };
 
-type CandidateQuestion = {
-  id: string;
-  choices: unknown;
-};
-
-const weightedPickWithoutReplacement = (
-  candidates: CandidateQuestion[],
-  weightsByQuestionId: Map<string, number>,
-  count: number,
-): CandidateQuestion[] => {
-  const pool = [...candidates];
-  const selected: CandidateQuestion[] = [];
-
-  while (selected.length < count && pool.length > 0) {
-    const poolWithWeights = pool.map((question) => ({
-      question,
-      weight: Math.max(0, weightsByQuestionId.get(question.id) ?? 1),
-    }));
-    const totalWeight = poolWithWeights.reduce((sum, item) => sum + item.weight, 0);
-
-    let pickedIndex = 0;
-
-    if (totalWeight > 0) {
-      let threshold = Math.random() * totalWeight;
-      for (let index = 0; index < poolWithWeights.length; index += 1) {
-        threshold -= poolWithWeights[index]?.weight ?? 0;
-        if (threshold <= 0) {
-          pickedIndex = index;
-          break;
-        }
-      }
-    } else {
-      pickedIndex = Math.floor(Math.random() * pool.length);
-    }
-
-    const picked = pool.splice(pickedIndex, 1)[0];
-    if (picked) {
-      selected.push(picked);
-    }
-  }
-
-  return selected;
-};
-
-const selectQuestionsByWeakpoint = async (
-  userId: string,
-  candidates: CandidateQuestion[],
-  count: number,
-): Promise<CandidateQuestion[]> => {
-  const candidateIds = candidates.map((question) => question.id);
-  const [attemptTotals, correctTotals] = await Promise.all([
-    prisma.attemptQuestion.groupBy({
-      by: ["questionId"],
-      where: {
-        questionId: { in: candidateIds },
-        attempt: {
-          userId,
-          status: "COMPLETED",
-        },
-      },
-      _count: { _all: true },
-    }),
-    prisma.attemptQuestion.groupBy({
-      by: ["questionId"],
-      where: {
-        questionId: { in: candidateIds },
-        isCorrect: true,
-        attempt: {
-          userId,
-          status: "COMPLETED",
-        },
-      },
-      _count: { _all: true },
-    }),
-  ]);
-
-  const totalMap = new Map(
-    attemptTotals.map((item) => [item.questionId, item._count._all]),
-  );
-  const correctMap = new Map(
-    correctTotals.map((item) => [item.questionId, item._count._all]),
-  );
-  const weightsByQuestionId = new Map<string, number>();
-
-  for (const candidate of candidates) {
-    const total = totalMap.get(candidate.id) ?? 0;
-    const correct = correctMap.get(candidate.id) ?? 0;
-    if (total === 0) {
-      weightsByQuestionId.set(candidate.id, 1.0);
-      continue;
-    }
-
-    const accuracy = correct / total;
-    const weight = Math.max(0.1, 1 - accuracy);
-    weightsByQuestionId.set(candidate.id, weight);
-  }
-
-  return weightedPickWithoutReplacement(candidates, weightsByQuestionId, count);
-};
-
 export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     const invalidOriginResponse = requireValidOrigin(request);
@@ -161,7 +61,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
-    const { categories, level, count, mode } = parsed.data;
+    const { categories, level, count } = parsed.data;
 
     const questions = await prisma.question.findMany({
       where: {
@@ -181,16 +81,14 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
-    const selected =
-      mode === "weakpoint"
-        ? await selectQuestionsByWeakpoint(user.id, questions, count)
-        : shuffleInPlace(questions).slice(0, count);
+    const shuffled = shuffleInPlace(questions);
+    const selected = shuffled.slice(0, count);
 
     const attempt = await prisma.$transaction(async (tx) => {
       const newAttempt = await tx.attempt.create({
         data: {
           userId: user.id,
-          filters: { categories, level, count, mode },
+          filters: { categories, level, count },
         },
       });
 

@@ -480,7 +480,7 @@ components:
 
     CreateAttemptRequest:
       type: object
-      required: [categories, level, count]
+      required: [categories, level, numQuestions]
       properties:
         categories:
           type: array
@@ -492,14 +492,9 @@ components:
         level:
           type: integer
           enum: [1, 2, 3]
-        count:
+        numQuestions:
           type: integer
           minimum: 1
-          maximum: 50
-        mode:
-          type: string
-          enum: [random, weakpoint]
-          default: random
 
     CreateAttemptResponse:
       type: object

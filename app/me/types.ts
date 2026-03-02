@@ -4,7 +4,6 @@ export type AttemptFilters = {
   categories?: string[];
   level?: number;
   count?: number;
-  mode?: "random" | "weakpoint";
 };
 
 export type AttemptSummary = {
