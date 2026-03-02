@@ -1,13 +1,8 @@
+import type { CategoryScore } from "@/lib/quiz/types";
+
 type ScoringQuestion = {
   isCorrect: boolean | null;
   category: string;
-};
-
-type CategoryScore = {
-  category: string;
-  total: number;
-  correct: number;
-  percent: number;
 };
 
 type ScoringResult = {

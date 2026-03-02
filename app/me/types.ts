@@ -1,9 +1,4 @@
-export type CategoryScore = {
-  category: string;
-  total: number;
-  correct: number;
-  percent: number;
-};
+import type { CategoryScore } from "@/lib/quiz/types";
 
 export type AttemptFilters = {
   categories?: string[];
