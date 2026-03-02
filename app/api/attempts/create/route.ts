@@ -33,6 +33,54 @@ const buildChoiceOrder = (choicesCount: number): number[] => {
   return shuffleInPlace(indexes);
 };
 
+type SelectedQuestion = {
+  id: string;
+  choices: unknown;
+};
+
+const isUnknownChoiceOrderValidationError = (error: unknown): boolean => {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return error.message.includes("Unknown argument `choiceOrder`");
+};
+
+const createAttemptWithQuestionOrder = async (
+  userId: string,
+  categories: string[],
+  level: number,
+  count: number,
+  selected: SelectedQuestion[],
+  withChoiceOrder: boolean,
+) => {
+  return prisma.$transaction(async (tx) => {
+    const newAttempt = await tx.attempt.create({
+      data: {
+        userId,
+        filters: { categories, level, count },
+      },
+    });
+
+    await tx.attemptQuestion.createMany({
+      data: selected.map((question, index) => ({
+        attemptId: newAttempt.id,
+        questionId: question.id,
+        order: index + 1,
+        ...(withChoiceOrder
+          ? {
+              choiceOrder: buildChoiceOrder(
+                parseQuestionChoices(question.choices).length,
+              ),
+            }
+          : {}),
+      })),
+    });
+
+    return newAttempt;
+  });
+};
+
 export const POST = async (request: Request): Promise<NextResponse> => {
   try {
     const invalidOriginResponse = requireValidOrigin(request);
@@ -84,24 +132,28 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const shuffled = shuffleInPlace(questions);
     const selected = shuffled.slice(0, count);
 
-    const attempt = await prisma.$transaction(async (tx) => {
-      const newAttempt = await tx.attempt.create({
-        data: {
-          userId: user.id,
-          filters: { categories, level, count },
-        },
-      });
+    const attempt = await createAttemptWithQuestionOrder(
+      user.id,
+      categories,
+      level,
+      count,
+      selected,
+      true,
+    ).catch(async (error: unknown) => {
+      // Keep the create endpoint available even when local Prisma Client
+      // hasn't been regenerated yet after schema changes.
+      if (!isUnknownChoiceOrderValidationError(error)) {
+        throw error;
+      }
 
-      await tx.attemptQuestion.createMany({
-        data: selected.map((question, index) => ({
-          attemptId: newAttempt.id,
-          questionId: question.id,
-          order: index + 1,
-          choiceOrder: buildChoiceOrder(parseQuestionChoices(question.choices).length),
-        })),
-      });
-
-      return newAttempt;
+      return createAttemptWithQuestionOrder(
+        user.id,
+        categories,
+        level,
+        count,
+        selected,
+        false,
+      );
     });
 
     return NextResponse.json({ attemptId: attempt.id }, { status: 201 });
