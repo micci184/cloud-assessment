@@ -756,6 +756,11 @@ export const MeDashboard = () => {
                         Lv.{filters.level}
                       </span>
                     )}
+                    {filters.mode && (
+                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 dark:bg-neutral-800">
+                        {filters.mode === "weakpoint" ? "苦手重点" : "ランダム"}
+                      </span>
+                    )}
                   </div>
                   </button>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">

@@ -9,12 +9,15 @@ type CategoryInfo = {
   count: number;
 };
 
+type AttemptMode = "random" | "weakpoint";
+
 export const SelectForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [level, setLevel] = useState<number>(1);
   const [count, setCount] = useState<number>(5);
+  const [mode, setMode] = useState<AttemptMode>("random");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -92,6 +95,7 @@ export const SelectForm = () => {
           categories: selectedCategories,
           level,
           count,
+          mode,
         }),
       });
 
@@ -223,6 +227,43 @@ export const SelectForm = () => {
             className="w-24 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
             disabled={isSubmitting}
           />
+        </div>
+
+        {/* 出題モード */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+            出題モード
+          </label>
+          <div role="radiogroup" aria-label="出題モード選択" className="flex flex-col gap-2">
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === "random"}
+              onClick={() => setMode("random")}
+              className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                mode === "random"
+                  ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                  : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+              }`}
+              disabled={isSubmitting}
+            >
+              ランダム（均等出題）
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={mode === "weakpoint"}
+              onClick={() => setMode("weakpoint")}
+              className={`rounded-lg border px-3 py-2 text-left text-sm transition ${
+                mode === "weakpoint"
+                  ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                  : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+              }`}
+              disabled={isSubmitting}
+            >
+              苦手重点（未出題・正答率の低い問題を優先）
+            </button>
+          </div>
         </div>
 
         {error && (

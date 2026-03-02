@@ -19,6 +19,7 @@ export const createAttemptSchema = z.object({
     .max(100, "カテゴリ数が多すぎます"),
   level: z.number().int().min(1).max(3),
   count: z.number().int().min(1).max(50),
+  mode: z.enum(["random", "weakpoint"]).default("random"),
 });
 
 export const answerSchema = z.object({
