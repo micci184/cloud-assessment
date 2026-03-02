@@ -8,6 +8,7 @@ import {
 import { createAttemptSchema } from "@/lib/attempt/schemas";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
+import { parseQuestionChoices } from "@/lib/quiz/parsers";
 
 const shuffleInPlace = <T>(items: T[]): T[] => {
   const shuffled = [...items];
@@ -21,6 +22,15 @@ const shuffleInPlace = <T>(items: T[]): T[] => {
   }
 
   return shuffled;
+};
+
+const buildChoiceOrder = (choicesCount: number): number[] => {
+  if (choicesCount <= 0) {
+    return [];
+  }
+
+  const indexes = Array.from({ length: choicesCount }, (_, index) => index);
+  return shuffleInPlace(indexes);
 };
 
 export const POST = async (request: Request): Promise<NextResponse> => {
@@ -58,7 +68,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
         category: { in: categories },
         level,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        choices: true,
+      },
     });
 
     if (questions.length < count) {
@@ -84,6 +97,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
           attemptId: newAttempt.id,
           questionId: question.id,
           order: index + 1,
+          choiceOrder: buildChoiceOrder(parseQuestionChoices(question.choices).length),
         })),
       });
 

@@ -8,6 +8,7 @@ import type { CategoryScore } from "@/lib/quiz/types";
 type QuestionData = {
   attemptQuestionId: string;
   order: number;
+  choiceOrder?: number[];
   selectedIndex: number | null;
   isCorrect: boolean | null;
   question: {
@@ -96,6 +97,12 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
     const currentQuestion = attempt.questions[currentIndex];
     if (!currentQuestion) return;
+    const choiceOrder = getChoiceOrder(currentQuestion);
+    const selectedOriginalIndex = choiceOrder[selectedChoice];
+    if (selectedOriginalIndex === undefined) {
+      setError("選択肢の状態が不正です。再読み込みしてください");
+      return;
+    }
 
     setIsSubmitting(true);
     setError("");
@@ -106,7 +113,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           attemptQuestionId: currentQuestion.attemptQuestionId,
-          selectedIndex: selectedChoice,
+          selectedIndex: selectedOriginalIndex,
         }),
       });
 
@@ -224,6 +231,32 @@ export const QuizRunner = ({ attemptId }: Props) => {
     questionNavButtonRefs.current[clampedIndex]?.focus();
   };
 
+  const getChoiceOrder = (question: QuestionData): number[] => {
+    const choicesCount = question.question.choices.length;
+    const fallbackOrder = Array.from(
+      { length: choicesCount },
+      (_, index) => index,
+    );
+    const choiceOrder = question.choiceOrder;
+
+    if (!choiceOrder || choiceOrder.length !== choicesCount) {
+      return fallbackOrder;
+    }
+
+    const hasOutOfRange = choiceOrder.some(
+      (index) => index < 0 || index >= choicesCount,
+    );
+    if (hasOutOfRange) {
+      return fallbackOrder;
+    }
+
+    if (new Set(choiceOrder).size !== choicesCount) {
+      return fallbackOrder;
+    }
+
+    return choiceOrder;
+  };
+
   const handleQuestionNavKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
     questionIndex: number,
@@ -294,6 +327,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
   const allAnswered = attempt.questions.every((q) => q.selectedIndex !== null);
   const currentQuestion = attempt.questions[currentIndex];
+  const currentChoiceOrder = currentQuestion
+    ? getChoiceOrder(currentQuestion)
+    : [];
 
   if (!currentQuestion) return null;
 
@@ -343,13 +379,13 @@ export const QuizRunner = ({ attemptId }: Props) => {
           aria-label={`問題 ${currentIndex + 1} の選択肢`}
           className="flex flex-col gap-3"
         >
-          {currentQuestion.question.choices.map(
-            (choice, index) => {
+          {currentChoiceOrder.map((originalIndex, index) => {
+              const choice = currentQuestion.question.choices[originalIndex];
               const canAnswer =
                 currentQuestion.selectedIndex === null && !isSubmitting;
               const isSelected =
                 selectedChoice === index ||
-                (currentQuestion.selectedIndex === index &&
+                (currentQuestion.selectedIndex === originalIndex &&
                   selectedChoice === null);
 
               return (
@@ -368,7 +404,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
                     handleChoiceKeyDown(
                       event,
                       index,
-                      currentQuestion.question.choices.length,
+                      currentChoiceOrder.length,
                       canAnswer,
                     );
                   }}
@@ -388,8 +424,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
                   {choice}
                 </button>
               );
-            },
-          )}
+            })}
         </div>
 
         {error && (
