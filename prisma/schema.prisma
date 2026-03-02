@@ -68,6 +68,7 @@ model AttemptQuestion {
   attemptId    String
   questionId   String
   order        Int
+  choiceOrder  Json?
   selectedIndex Int?
   isCorrect    Boolean?
   answeredAt   DateTime?

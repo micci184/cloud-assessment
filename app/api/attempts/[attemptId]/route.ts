@@ -4,7 +4,11 @@ import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-import { parseCategoryBreakdown, parseQuestionChoices } from "@/lib/quiz/parsers";
+import {
+  parseCategoryBreakdown,
+  parseChoiceOrder,
+  parseQuestionChoices,
+} from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -62,9 +66,13 @@ export const GET = async (
       return messageResponse("forbidden", 403);
     }
 
-    const questions = attempt.questions.map((aq) => ({
+    const questions = attempt.questions.map((aq) => {
+      const parsedChoices = parseQuestionChoices(aq.question.choices);
+
+      return {
       attemptQuestionId: aq.id,
       order: aq.order,
+      choiceOrder: parseChoiceOrder(aq.choiceOrder, parsedChoices.length),
       selectedIndex: aq.selectedIndex,
       isCorrect: aq.isCorrect,
       answeredAt: aq.answeredAt,
@@ -73,7 +81,7 @@ export const GET = async (
         category: aq.question.category,
         level: aq.question.level,
         questionText: aq.question.questionText,
-        choices: parseQuestionChoices(aq.question.choices),
+        choices: parsedChoices,
         ...(attempt.status === "COMPLETED"
           ? {
               answerIndex: aq.question.answerIndex,
@@ -81,7 +89,8 @@ export const GET = async (
             }
           : {}),
       },
-    }));
+    };
+    });
 
     return NextResponse.json({
       id: attempt.id,

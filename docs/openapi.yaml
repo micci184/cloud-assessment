@@ -575,6 +575,11 @@ components:
           type: array
           items:
             type: string
+        choiceOrder:
+          type: array
+          description: 選択肢表示順（表示インデックス→元のchoicesインデックス）
+          items:
+            type: integer
         selectedIndex:
           type: integer
           nullable: true
