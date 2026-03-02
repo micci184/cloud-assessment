@@ -9,6 +9,15 @@ type CategoryAggregate = {
   correct: number;
 };
 
+type CategoryQuestion = {
+  isCorrect: boolean | null;
+  question: {
+    category: string;
+  };
+};
+
+const RECENT_CATEGORY_QUESTION_LIMIT = 30;
+
 const toDateKey = (date: Date): string => {
   return date.toISOString().slice(0, 10);
 };
@@ -51,6 +60,44 @@ const createActivityBuckets = (
   });
 };
 
+const aggregateCategoryProgress = (
+  questions: CategoryQuestion[],
+): Array<{ category: string; total: number; correct: number; percent: number }> => {
+  const categoryMap = questions.reduce<Record<string, CategoryAggregate>>(
+    (acc, question) => {
+      const category = question.question.category;
+      const current = acc[category] ?? { total: 0, correct: 0 };
+      current.total += 1;
+      if (question.isCorrect === true) {
+        current.correct += 1;
+      }
+      acc[category] = current;
+      return acc;
+    },
+    {},
+  );
+
+  return Object.entries(categoryMap).map(([category, aggregate]) => ({
+    category,
+    total: aggregate.total,
+    correct: aggregate.correct,
+    percent:
+      aggregate.total === 0
+        ? 0
+        : roundToOneDecimal((aggregate.correct / aggregate.total) * 100),
+  }));
+};
+
+const calculateWeaknessScore = (correct: number, total: number): number => {
+  if (total <= 0) {
+    return 0;
+  }
+
+  const correctRate = correct / total;
+  const score = (1 - correctRate) * Math.log2(total + 1);
+  return Math.round(score * 1000) / 1000;
+};
+
 export const GET = async (request: Request): Promise<NextResponse> => {
   try {
     const user = await getUserFromRequest(request);
@@ -63,6 +110,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       recentResults,
       totalAnswered,
       completedQuestions,
+      recentCategoryQuestions,
       answeredQuestions,
     ] =
       await Promise.all([
@@ -110,6 +158,32 @@ export const GET = async (request: Request): Promise<NextResponse> => {
               not: null,
             },
           },
+          select: {
+            isCorrect: true,
+            question: {
+              select: {
+                category: true,
+              },
+            },
+          },
+        }),
+        prisma.attemptQuestion.findMany({
+          where: {
+            attempt: {
+              userId: user.id,
+              status: "COMPLETED",
+            },
+            isCorrect: {
+              not: null,
+            },
+            answeredAt: {
+              not: null,
+            },
+          },
+          orderBy: {
+            answeredAt: "desc",
+          },
+          take: RECENT_CATEGORY_QUESTION_LIMIT,
           select: {
             isCorrect: true,
             question: {
@@ -190,31 +264,29 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       0,
     );
 
-    const categoryMap = completedQuestions.reduce<Record<string, CategoryAggregate>>(
-      (acc, question) => {
-        const category = question.question.category;
-        const current = acc[category] ?? { total: 0, correct: 0 };
-        current.total += 1;
-        if (question.isCorrect === true) {
-          current.correct += 1;
-        }
-        acc[category] = current;
-        return acc;
-      },
-      {},
+    const categoryProgress = aggregateCategoryProgress(completedQuestions).sort(
+      (a, b) => a.category.localeCompare(b.category),
+    );
+    const recentCategoryProgress = aggregateCategoryProgress(recentCategoryQuestions).sort(
+      (a, b) => a.category.localeCompare(b.category),
     );
 
-    const categoryProgress = Object.entries(categoryMap)
-      .map(([category, aggregate]) => ({
-        category,
-        total: aggregate.total,
-        correct: aggregate.correct,
-        percent:
-          aggregate.total === 0
-            ? 0
-            : roundToOneDecimal((aggregate.correct / aggregate.total) * 100),
+    const weaknessRanking = categoryProgress
+      .map((item) => ({
+        ...item,
+        weaknessScore: calculateWeaknessScore(item.correct, item.total),
       }))
-      .sort((a, b) => a.category.localeCompare(b.category));
+      .filter((item) => item.total > 0)
+      .sort((a, b) => {
+        if (b.weaknessScore !== a.weaknessScore) {
+          return b.weaknessScore - a.weaknessScore;
+        }
+        if (a.percent !== b.percent) {
+          return a.percent - b.percent;
+        }
+        return b.total - a.total;
+      })
+      .slice(0, 3);
 
     return NextResponse.json({
       totalAttempts,
@@ -227,6 +299,8 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       weeklyActivity,
       activityHeatmap,
       categoryProgress,
+      recentCategoryProgress,
+      weaknessRanking,
     });
   } catch (error: unknown) {
     return internalServerErrorResponse(error);

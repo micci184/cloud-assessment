@@ -67,6 +67,12 @@ export type MeStats = {
     count: number;
   }>;
   categoryProgress: CategoryScore[];
+  recentCategoryProgress: CategoryScore[];
+  weaknessRanking: Array<
+    CategoryScore & {
+      weaknessScore: number;
+    }
+  >;
 };
 
 export type MeProfile = {

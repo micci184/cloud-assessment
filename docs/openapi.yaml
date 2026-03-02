@@ -660,6 +660,16 @@ components:
           type: number
           format: float
 
+    WeaknessRankingItem:
+      allOf:
+        - $ref: "#/components/schemas/CategoryProgressItem"
+        - type: object
+          required: [weaknessScore]
+          properties:
+            weaknessScore:
+              type: number
+              format: float
+
     MeStatsResponse:
       type: object
       required:
@@ -674,6 +684,8 @@ components:
           weeklyActivity,
           activityHeatmap,
           categoryProgress,
+          recentCategoryProgress,
+          weaknessRanking,
         ]
       properties:
         totalAttempts:
@@ -709,6 +721,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/CategoryProgressItem"
+        recentCategoryProgress:
+          type: array
+          items:
+            $ref: "#/components/schemas/CategoryProgressItem"
+        weaknessRanking:
+          type: array
+          items:
+            $ref: "#/components/schemas/WeaknessRankingItem"
 
     MyAttemptSummary:
       type: object
