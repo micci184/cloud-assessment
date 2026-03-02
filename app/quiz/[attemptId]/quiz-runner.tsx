@@ -259,7 +259,11 @@ export const QuizRunner = ({ attemptId }: Props) => {
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p
+          role="status"
+          aria-live="polite"
+          className="text-sm text-neutral-600 dark:text-neutral-300"
+        >
           読み込み中...
         </p>
       </section>

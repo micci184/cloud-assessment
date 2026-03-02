@@ -491,7 +491,9 @@ export const MeDashboard = () => {
   if (isLoading) {
     return (
       <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中...</p>
+        <p role="status" aria-live="polite" className="text-sm text-neutral-600 dark:text-neutral-300">
+          読み込み中...
+        </p>
       </section>
     );
   }
@@ -803,7 +805,12 @@ export const MeDashboard = () => {
                           : "Notionへ送信"}
                       </button>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
+                    <div
+                      role="status"
+                      aria-live="polite"
+                      aria-atomic="true"
+                      className="flex flex-col items-end gap-1"
+                    >
                       {exportState?.message && (
                         <span
                           className={`text-xs ${
@@ -874,7 +881,9 @@ export const MeDashboard = () => {
       {/* 詳細表示 */}
       {isDetailLoading && (
         <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">読み込み中...</p>
+          <p role="status" aria-live="polite" className="text-sm text-neutral-600 dark:text-neutral-300">
+            読み込み中...
+          </p>
         </section>
       )}
 
