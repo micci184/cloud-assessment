@@ -22,8 +22,6 @@ import { formatDate } from "./utils";
 const ATTEMPTS_PAGE_SIZE = 10;
 const NOTION_STATUS_POLL_INTERVAL_MS = 1500;
 const NOTION_STATUS_POLL_MAX_ATTEMPTS = 40;
-const CATEGORY_MASTER_MIN_TOTAL = 5;
-const CATEGORY_MASTER_MIN_PERCENT = 80;
 
 export const MeDashboard = () => {
   const router = useRouter();
@@ -512,19 +510,6 @@ export const MeDashboard = () => {
   const profileInitial =
     profile?.email.trim().charAt(0).toUpperCase() || "?";
   const profileName = profile?.email.split("@")[0] ?? "学習者";
-  const orderedCategoryProgress = [...(stats?.categoryProgress ?? [])].sort((a, b) => {
-    if (a.percent !== b.percent) {
-      return a.percent - b.percent;
-    }
-    if (b.total !== a.total) {
-      return b.total - a.total;
-    }
-    return a.category.localeCompare(b.category);
-  });
-  const categoryTotalAnswered = orderedCategoryProgress.reduce(
-    (sum, item) => sum + item.total,
-    0,
-  );
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6">
@@ -618,58 +603,6 @@ export const MeDashboard = () => {
             <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
             <SummaryCard label="直近10回平均点" value={`${stats.recentAveragePercent}%`} />
             <SummaryCard label="直近7日回答数" value={`${stats.recent7DaysAnswered}問`} />
-          </section>
-
-          <section className="grid grid-cols-1 gap-4">
-            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-              <h2 className="mb-1 text-lg font-semibold">カテゴリ習熟度</h2>
-              <p className="mb-3 text-xs text-neutral-600 dark:text-neutral-400">
-                {orderedCategoryProgress.length}カテゴリ / 回答合計 {categoryTotalAnswered}問
-              </p>
-              {orderedCategoryProgress.length === 0 ? (
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  受験完了後にカテゴリごとの習熟度が表示されます。
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {orderedCategoryProgress.map((item) => {
-                    const isMastered =
-                      item.total >= CATEGORY_MASTER_MIN_TOTAL &&
-                      item.percent >= CATEGORY_MASTER_MIN_PERCENT;
-                    const statusLabel = isMastered
-                      ? "マスター"
-                      : item.percent < 60
-                        ? "要復習"
-                        : "学習中";
-
-                    return (
-                      <div
-                        key={item.category}
-                        className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span>{item.category}</span>
-                          <span
-                            className={`rounded px-2 py-0.5 text-xs ${
-                              isMastered
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : statusLabel === "要復習"
-                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                            }`}
-                          >
-                            {statusLabel}
-                          </span>
-                        </div>
-                        <span className="text-neutral-600 dark:text-neutral-400">
-                          {item.correct}/{item.total} ({item.percent}%)
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </article>
           </section>
 
           <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
