@@ -22,6 +22,8 @@ import { formatDate } from "./utils";
 const ATTEMPTS_PAGE_SIZE = 10;
 const NOTION_STATUS_POLL_INTERVAL_MS = 1500;
 const NOTION_STATUS_POLL_MAX_ATTEMPTS = 40;
+const CATEGORY_MASTER_MIN_TOTAL = 5;
+const CATEGORY_MASTER_MIN_PERCENT = 80;
 
 export const MeDashboard = () => {
   const router = useRouter();
@@ -510,8 +512,18 @@ export const MeDashboard = () => {
   const profileInitial =
     profile?.email.trim().charAt(0).toUpperCase() || "?";
   const profileName = profile?.email.split("@")[0] ?? "学習者";
-  const recentCategoryMap = new Map(
-    (stats?.recentCategoryProgress ?? []).map((item) => [item.category, item]),
+  const orderedCategoryProgress = [...(stats?.categoryProgress ?? [])].sort((a, b) => {
+    if (a.percent !== b.percent) {
+      return a.percent - b.percent;
+    }
+    if (b.total !== a.total) {
+      return b.total - a.total;
+    }
+    return a.category.localeCompare(b.category);
+  });
+  const categoryTotalAnswered = orderedCategoryProgress.reduce(
+    (sum, item) => sum + item.total,
+    0,
   );
 
   return (
@@ -608,64 +620,50 @@ export const MeDashboard = () => {
             <SummaryCard label="直近7日回答数" value={`${stats.recent7DaysAnswered}問`} />
           </section>
 
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <section className="grid grid-cols-1 gap-4">
             <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-              <h2 className="mb-3 text-lg font-semibold">復習優先カテゴリ</h2>
-              {stats.weaknessRanking.length === 0 ? (
+              <h2 className="mb-1 text-lg font-semibold">カテゴリ習熟度</h2>
+              <p className="mb-3 text-xs text-neutral-600 dark:text-neutral-400">
+                {orderedCategoryProgress.length}カテゴリ / 回答合計 {categoryTotalAnswered}問
+              </p>
+              {orderedCategoryProgress.length === 0 ? (
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  データがたまると、ここに弱点カテゴリが表示されます。
+                  受験完了後にカテゴリごとの習熟度が表示されます。
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {stats.weaknessRanking.map((item, index) => (
-                    <div
-                      key={item.category}
-                      className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-brand-600 dark:text-brand-300">
-                          #{index + 1}
-                        </span>
-                        <span>{item.category}</span>
-                      </div>
-                      <span className="text-neutral-600 dark:text-neutral-400">
-                        {item.correct}/{item.total} ({item.percent}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </article>
-
-            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-              <h2 className="mb-3 text-lg font-semibold">カテゴリ別トレンド</h2>
-              {stats.categoryProgress.length === 0 ? (
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                  受験完了後にカテゴリ別の推移が表示されます。
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {stats.categoryProgress.map((item) => {
-                    const recent = recentCategoryMap.get(item.category);
-                    const recentPercent = recent?.percent ?? 0;
-                    const diff = Math.round((recentPercent - item.percent) * 10) / 10;
-                    const trendLabel =
-                      diff >= 5 ? "上昇" : diff <= -5 ? "下降" : "横ばい";
+                  {orderedCategoryProgress.map((item) => {
+                    const isMastered =
+                      item.total >= CATEGORY_MASTER_MIN_TOTAL &&
+                      item.percent >= CATEGORY_MASTER_MIN_PERCENT;
+                    const statusLabel = isMastered
+                      ? "マスター"
+                      : item.percent < 60
+                        ? "要復習"
+                        : "学習中";
 
                     return (
                       <div
                         key={item.category}
-                        className="rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700"
+                        className="flex items-center justify-between rounded-lg border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700"
                       >
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
                           <span>{item.category}</span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {trendLabel}
+                          <span
+                            className={`rounded px-2 py-0.5 text-xs ${
+                              isMastered
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : statusLabel === "要復習"
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                  : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            }`}
+                          >
+                            {statusLabel}
                           </span>
                         </div>
-                        <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-400">
-                          全期間 {item.percent}% / 直近 {recentPercent}%（差分 {diff}%）
-                        </p>
+                        <span className="text-neutral-600 dark:text-neutral-400">
+                          {item.correct}/{item.total} ({item.percent}%)
+                        </span>
                       </div>
                     );
                   })}
