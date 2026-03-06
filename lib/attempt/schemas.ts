@@ -23,7 +23,20 @@ export const createAttemptSchema = z.object({
 
 export const answerSchema = z.object({
   attemptQuestionId: z.string().min(1).max(100, "attemptQuestionId is too long"),
-  selectedIndex: z.number().int().min(0).max(3),
+  selectedIndex: z.number().int().min(0).optional(),
+  selectedIndices: z.array(z.number().int().min(0)).min(1).optional(),
+}).superRefine((value, context) => {
+  const hasSelectedIndex = value.selectedIndex !== undefined;
+  const hasSelectedIndices = value.selectedIndices !== undefined;
+
+  if (hasSelectedIndex === hasSelectedIndices) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        "selectedIndex か selectedIndices のいずれか一方のみ指定してください",
+      path: ["selectedIndex"],
+    });
+  }
 });
 
 export const attemptsQuerySchema = z.object({

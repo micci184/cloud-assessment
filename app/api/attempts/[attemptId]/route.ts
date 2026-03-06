@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 import {
   parseCategoryBreakdown,
   parseChoiceOrder,
+  parseQuestionIndices,
   parseQuestionChoices,
 } from "@/lib/quiz/parsers";
 
@@ -46,9 +47,11 @@ export const GET = async (
                 id: true,
                 category: true,
                 level: true,
+                questionType: true,
                 questionText: true,
                 choices: true,
                 answerIndex: true,
+                answerIndices: true,
                 explanation: true,
               },
             },
@@ -68,28 +71,49 @@ export const GET = async (
 
     const questions = attempt.questions.map((aq) => {
       const parsedChoices = parseQuestionChoices(aq.question.choices);
+      const parsedAnswerIndices = parseQuestionIndices(
+        aq.question.answerIndices,
+        parsedChoices.length,
+      );
+      const answerIndices =
+        parsedAnswerIndices.length > 0
+          ? parsedAnswerIndices
+          : [aq.question.answerIndex];
+      const parsedSelectedIndices = parseQuestionIndices(
+        aq.selectedIndices,
+        parsedChoices.length,
+      );
+      const selectedIndices =
+        parsedSelectedIndices.length > 0
+          ? parsedSelectedIndices
+          : aq.selectedIndex !== null
+            ? [aq.selectedIndex]
+            : null;
 
       return {
-      attemptQuestionId: aq.id,
-      order: aq.order,
-      choiceOrder: parseChoiceOrder(aq.choiceOrder, parsedChoices.length),
-      selectedIndex: aq.selectedIndex,
-      isCorrect: aq.isCorrect,
-      answeredAt: aq.answeredAt,
-      question: {
-        id: aq.question.id,
-        category: aq.question.category,
-        level: aq.question.level,
-        questionText: aq.question.questionText,
-        choices: parsedChoices,
-        ...(attempt.status === "COMPLETED"
-          ? {
-              answerIndex: aq.question.answerIndex,
-              explanation: aq.question.explanation,
-            }
-          : {}),
-      },
-    };
+        attemptQuestionId: aq.id,
+        order: aq.order,
+        choiceOrder: parseChoiceOrder(aq.choiceOrder, parsedChoices.length),
+        selectedIndex: aq.selectedIndex,
+        selectedIndices,
+        isCorrect: aq.isCorrect,
+        answeredAt: aq.answeredAt,
+        question: {
+          id: aq.question.id,
+          category: aq.question.category,
+          level: aq.question.level,
+          questionType: aq.question.questionType,
+          questionText: aq.question.questionText,
+          choices: parsedChoices,
+          ...(attempt.status === "COMPLETED"
+            ? {
+                answerIndex: aq.question.answerIndex,
+                answerIndices,
+                explanation: aq.question.explanation,
+              }
+            : {}),
+        },
+      };
     });
 
     return NextResponse.json({

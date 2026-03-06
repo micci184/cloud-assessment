@@ -12,6 +12,7 @@ const categoryScoreSchema = z.object({
 });
 
 const categoryBreakdownSchema = z.array(categoryScoreSchema);
+const indicesSchema = z.array(z.number().int().nonnegative());
 
 export const parseQuestionChoices = (value: unknown): string[] => {
   const parsed = choicesSchema.safeParse(value);
@@ -44,6 +45,29 @@ export const parseChoiceOrder = (
   }
 
   return parsed.data;
+};
+
+export const parseQuestionIndices = (
+  value: unknown,
+  choicesCount: number,
+): number[] => {
+  if (choicesCount <= 0) {
+    return [];
+  }
+
+  const parsed = indicesSchema.safeParse(value);
+  if (!parsed.success || parsed.data.length === 0) {
+    return [];
+  }
+
+  const hasOutOfRange = parsed.data.some(
+    (index) => index < 0 || index >= choicesCount,
+  );
+  if (hasOutOfRange) {
+    return [];
+  }
+
+  return [...new Set(parsed.data)].sort((a, b) => a - b);
 };
 
 export const parseCategoryBreakdown = (value: unknown): CategoryScore[] => {
