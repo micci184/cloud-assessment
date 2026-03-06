@@ -10,14 +10,17 @@ type QuestionData = {
   order: number;
   choiceOrder?: number[];
   selectedIndex: number | null;
+  selectedIndices: number[] | null;
   isCorrect: boolean | null;
   question: {
     id: string;
     category: string;
     level: number;
+    questionType: "SINGLE" | "MULTIPLE";
     questionText: string;
     choices: string[];
     answerIndex?: number;
+    answerIndices?: number[];
     explanation?: string;
   };
 };
@@ -41,7 +44,7 @@ type Props = {
 export const QuizRunner = ({ attemptId }: Props) => {
   const [attempt, setAttempt] = useState<AttemptData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState<number | null>(null);
+  const [draftSelectedChoices, setDraftSelectedChoices] = useState<number[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -65,7 +68,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
       if (data.status === "IN_PROGRESS") {
         const firstUnanswered = data.questions.findIndex(
-          (q) => q.selectedIndex === null,
+          (q) =>
+            q.selectedIndex === null &&
+            (!q.selectedIndices || q.selectedIndices.length === 0),
         );
         setCurrentIndex(
           firstUnanswered === -1 ? data.questions.length - 1 : firstUnanswered,
@@ -92,14 +97,59 @@ export const QuizRunner = ({ attemptId }: Props) => {
     }
   }, [error]);
 
+  useEffect(() => {
+    if (!attempt) {
+      return;
+    }
+
+    const currentQuestion = attempt.questions[currentIndex];
+    if (!currentQuestion) {
+      setDraftSelectedChoices([]);
+      return;
+    }
+
+    const choiceOrder = getChoiceOrder(currentQuestion);
+    const selectedOriginalIndices = getSelectedOriginalIndices(currentQuestion);
+    const selectedDisplayIndices = selectedOriginalIndices
+      .map((originalIndex) => choiceOrder.indexOf(originalIndex))
+      .filter((displayIndex) => displayIndex >= 0)
+      .sort((a, b) => a - b);
+
+    setDraftSelectedChoices(selectedDisplayIndices);
+  }, [attempt, currentIndex]);
+
+  const isMultipleChoiceQuestion = (question: QuestionData): boolean => {
+    return question.question.questionType === "MULTIPLE";
+  };
+
+  const getSelectedOriginalIndices = (question: QuestionData): number[] => {
+    if (question.selectedIndices && question.selectedIndices.length > 0) {
+      return [...question.selectedIndices].sort((a, b) => a - b);
+    }
+
+    if (question.selectedIndex !== null) {
+      return [question.selectedIndex];
+    }
+
+    return [];
+  };
+
+  const isQuestionAnswered = (question: QuestionData): boolean => {
+    return getSelectedOriginalIndices(question).length > 0;
+  };
+
   const handleAnswer = async (): Promise<void> => {
-    if (selectedChoice === null || !attempt) return;
+    if (draftSelectedChoices.length === 0 || !attempt) return;
 
     const currentQuestion = attempt.questions[currentIndex];
     if (!currentQuestion) return;
     const choiceOrder = getChoiceOrder(currentQuestion);
-    const selectedOriginalIndex = choiceOrder[selectedChoice];
-    if (selectedOriginalIndex === undefined) {
+    const selectedOriginalIndices = draftSelectedChoices
+      .map((displayIndex) => choiceOrder[displayIndex])
+      .filter((originalIndex): originalIndex is number => originalIndex !== undefined)
+      .sort((a, b) => a - b);
+
+    if (selectedOriginalIndices.length !== draftSelectedChoices.length) {
       setError("選択肢の状態が不正です。再読み込みしてください");
       return;
     }
@@ -113,7 +163,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           attemptQuestionId: currentQuestion.attemptQuestionId,
-          selectedIndex: selectedOriginalIndex,
+          ...(isMultipleChoiceQuestion(currentQuestion)
+            ? { selectedIndices: selectedOriginalIndices }
+            : { selectedIndex: selectedOriginalIndices[0] }),
         }),
       });
 
@@ -125,7 +177,8 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
       const result = (await response.json()) as {
         attemptQuestionId: string;
-        selectedIndex: number;
+        selectedIndex: number | null;
+        selectedIndices?: number[] | null;
       };
 
       setAttempt((prev) => {
@@ -136,6 +189,12 @@ export const QuizRunner = ({ attemptId }: Props) => {
             ? {
                 ...q,
                 selectedIndex: result.selectedIndex,
+                selectedIndices:
+                  result.selectedIndices && result.selectedIndices.length > 0
+                    ? result.selectedIndices
+                    : result.selectedIndex !== null
+                      ? [result.selectedIndex]
+                      : null,
               }
             : q,
         );
@@ -143,7 +202,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
         return { ...prev, questions: updatedQuestions };
       });
 
-      setSelectedChoice(null);
+      setDraftSelectedChoices([]);
 
       if (currentIndex < attempt.questions.length - 1) {
         setCurrentIndex(currentIndex + 1);
@@ -184,6 +243,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
     choiceIndex: number,
     choiceCount: number,
     canAnswer: boolean,
+    isMultipleChoice: boolean,
   ): void => {
     if (!canAnswer) {
       return;
@@ -192,7 +252,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
     if (event.key === "ArrowDown" || event.key === "ArrowRight") {
       event.preventDefault();
       const nextIndex = (choiceIndex + 1) % choiceCount;
-      setSelectedChoice(nextIndex);
+      if (!isMultipleChoice) {
+        setDraftSelectedChoices([nextIndex]);
+      }
       choiceButtonRefs.current[nextIndex]?.focus();
       return;
     }
@@ -200,14 +262,18 @@ export const QuizRunner = ({ attemptId }: Props) => {
     if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
       event.preventDefault();
       const prevIndex = (choiceIndex - 1 + choiceCount) % choiceCount;
-      setSelectedChoice(prevIndex);
+      if (!isMultipleChoice) {
+        setDraftSelectedChoices([prevIndex]);
+      }
       choiceButtonRefs.current[prevIndex]?.focus();
       return;
     }
 
     if (event.key === "Home") {
       event.preventDefault();
-      setSelectedChoice(0);
+      if (!isMultipleChoice) {
+        setDraftSelectedChoices([0]);
+      }
       choiceButtonRefs.current[0]?.focus();
       return;
     }
@@ -215,7 +281,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
     if (event.key === "End") {
       event.preventDefault();
       const lastIndex = choiceCount - 1;
-      setSelectedChoice(lastIndex);
+      if (!isMultipleChoice) {
+        setDraftSelectedChoices([lastIndex]);
+      }
       choiceButtonRefs.current[lastIndex]?.focus();
     }
   };
@@ -227,7 +295,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
     const clampedIndex = Math.max(0, Math.min(nextIndex, attempt.questions.length - 1));
     setCurrentIndex(clampedIndex);
-    setSelectedChoice(null);
+    setDraftSelectedChoices([]);
     questionNavButtonRefs.current[clampedIndex]?.focus();
   };
 
@@ -325,11 +393,14 @@ export const QuizRunner = ({ attemptId }: Props) => {
     return <ResultView attempt={attempt} />;
   }
 
-  const allAnswered = attempt.questions.every((q) => q.selectedIndex !== null);
+  const allAnswered = attempt.questions.every((q) => isQuestionAnswered(q));
   const currentQuestion = attempt.questions[currentIndex];
   const currentChoiceOrder = currentQuestion
     ? getChoiceOrder(currentQuestion)
     : [];
+  const isCurrentMultiple = currentQuestion
+    ? isMultipleChoiceQuestion(currentQuestion)
+    : false;
 
   if (!currentQuestion) return null;
 
@@ -342,7 +413,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
         </span>
         <span>
           回答済み:{" "}
-          {attempt.questions.filter((q) => q.selectedIndex !== null).length} /{" "}
+          {attempt.questions.filter((q) => isQuestionAnswered(q)).length} /{" "}
           {attempt.questions.length}
         </span>
       </div>
@@ -350,7 +421,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
         <div
           className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
           style={{
-            width: `${(attempt.questions.filter((q) => q.selectedIndex !== null).length / attempt.questions.length) * 100}%`,
+            width: `${(attempt.questions.filter((q) => isQuestionAnswered(q)).length / attempt.questions.length) * 100}%`,
           }}
         />
       </div>
@@ -364,6 +435,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
           <span className="rounded bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800">
             Lv.{currentQuestion.question.level}
           </span>
+          <span className="rounded bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800">
+            {isCurrentMultiple ? "複数選択" : "単一選択"}
+          </span>
         </div>
 
         <h2
@@ -374,19 +448,21 @@ export const QuizRunner = ({ attemptId }: Props) => {
           {currentQuestion.question.questionText}
         </h2>
 
+        {isCurrentMultiple && (
+          <p className="mb-3 rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+            複数選択問題です。正しいと思う選択肢をすべて選んでから「回答する」を押してください。
+          </p>
+        )}
         <div
-          role="radiogroup"
+          role={isCurrentMultiple ? "group" : "radiogroup"}
           aria-label={`問題 ${currentIndex + 1} の選択肢`}
           className="flex flex-col gap-3"
         >
           {currentChoiceOrder.map((originalIndex, index) => {
               const choice = currentQuestion.question.choices[originalIndex];
               const canAnswer =
-                currentQuestion.selectedIndex === null && !isSubmitting;
-              const isSelected =
-                selectedChoice === index ||
-                (currentQuestion.selectedIndex === originalIndex &&
-                  selectedChoice === null);
+                !isQuestionAnswered(currentQuestion) && !isSubmitting;
+              const isSelected = draftSelectedChoices.includes(index);
 
               return (
                 <button
@@ -396,8 +472,18 @@ export const QuizRunner = ({ attemptId }: Props) => {
                     choiceButtonRefs.current[index] = element;
                   }}
                   onClick={() => {
-                    if (currentQuestion.selectedIndex === null) {
-                      setSelectedChoice(index);
+                    if (!canAnswer) {
+                      return;
+                    }
+
+                    if (isCurrentMultiple) {
+                      setDraftSelectedChoices((prev) =>
+                        prev.includes(index)
+                          ? prev.filter((value) => value !== index)
+                          : [...prev, index].sort((a, b) => a - b),
+                      );
+                    } else {
+                      setDraftSelectedChoices([index]);
                     }
                   }}
                   onKeyDown={(event) => {
@@ -406,9 +492,10 @@ export const QuizRunner = ({ attemptId }: Props) => {
                       index,
                       currentChoiceOrder.length,
                       canAnswer,
+                      isCurrentMultiple,
                     );
                   }}
-                  role="radio"
+                  role={isCurrentMultiple ? "checkbox" : "radio"}
                   aria-checked={isSelected}
                   aria-disabled={!canAnswer}
                   disabled={!canAnswer}
@@ -445,20 +532,20 @@ export const QuizRunner = ({ attemptId }: Props) => {
               type="button"
               onClick={() => {
                 setCurrentIndex(Math.max(0, currentIndex - 1));
-                setSelectedChoice(null);
+                setDraftSelectedChoices([]);
               }}
               disabled={currentIndex === 0}
               className="rounded-lg border border-neutral-300 px-4 py-2 text-sm transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
             >
               前へ
             </button>
-            {currentQuestion.selectedIndex !== null &&
+            {isQuestionAnswered(currentQuestion) &&
               currentIndex < attempt.questions.length - 1 && (
                 <button
                   type="button"
                   onClick={() => {
                     setCurrentIndex(currentIndex + 1);
-                    setSelectedChoice(null);
+                    setDraftSelectedChoices([]);
                   }}
                   className="rounded-lg border border-neutral-300 px-4 py-2 text-sm transition hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500"
                 >
@@ -467,11 +554,11 @@ export const QuizRunner = ({ attemptId }: Props) => {
               )}
           </div>
 
-          {currentQuestion.selectedIndex === null && (
+          {!isQuestionAnswered(currentQuestion) && (
             <button
               type="button"
               onClick={handleAnswer}
-              disabled={selectedChoice === null || isSubmitting}
+              disabled={draftSelectedChoices.length === 0 || isSubmitting}
               className="rounded-lg bg-brand-300 px-6 py-2 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               {isSubmitting ? "送信中..." : "回答する"}
@@ -506,17 +593,17 @@ export const QuizRunner = ({ attemptId }: Props) => {
             }}
             onClick={() => {
               setCurrentIndex(i);
-              setSelectedChoice(null);
+              setDraftSelectedChoices([]);
             }}
             onKeyDown={(event) => {
               handleQuestionNavKeyDown(event, i);
             }}
             aria-current={i === currentIndex ? "true" : undefined}
-            aria-label={`問題 ${q.order}${q.selectedIndex !== null ? "（回答済み）" : "（未回答）"}`}
+            aria-label={`問題 ${q.order}${isQuestionAnswered(q) ? "（回答済み）" : "（未回答）"}`}
             className={`h-8 w-8 rounded text-xs font-medium transition ${
               i === currentIndex
                 ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
-                : q.selectedIndex !== null
+                : isQuestionAnswered(q)
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
             }`}
@@ -610,8 +697,20 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
 
             <div className="mb-3 flex flex-col gap-1.5">
               {q.question.choices.map((choice, i) => {
-                const isAnswer = i === q.question.answerIndex;
-                const isUserChoice = i === q.selectedIndex;
+                const answerIndices =
+                  q.question.answerIndices && q.question.answerIndices.length > 0
+                    ? q.question.answerIndices
+                    : q.question.answerIndex !== undefined
+                      ? [q.question.answerIndex]
+                      : [];
+                const selectedIndices =
+                  q.selectedIndices && q.selectedIndices.length > 0
+                    ? q.selectedIndices
+                    : q.selectedIndex !== null
+                      ? [q.selectedIndex]
+                      : [];
+                const isAnswer = answerIndices.includes(i);
+                const isUserChoice = selectedIndices.includes(i);
 
                 return (
                   <div

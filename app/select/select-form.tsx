@@ -132,6 +132,22 @@ export const SelectForm = () => {
     <section className="mx-auto w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-8 dark:border-white/15 dark:bg-black/50">
       <h1 className="mb-6 text-2xl font-semibold">問題条件を選択</h1>
 
+      <section className="mb-6 rounded-xl border border-brand-200/60 bg-brand-50/70 p-4 dark:border-brand-500/40 dark:bg-brand-900/20">
+        <h2 className="text-sm font-semibold text-brand-700 dark:text-brand-200">
+          学習モード
+        </h2>
+        <p className="mt-1 text-xs text-neutral-700 dark:text-neutral-300">
+          AWS Certified Cloud Practitioner 向けの固定プリセットで学習する場合は、専用モードから開始できます。
+        </p>
+        <button
+          type="button"
+          onClick={() => router.push("/select/cloud-practitioner")}
+          className="mt-3 rounded-lg border border-brand-400 bg-white px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-300 dark:bg-black/30 dark:text-brand-200 dark:hover:bg-brand-900/40"
+        >
+          Cloud Practitioner専用モードへ
+        </button>
+      </section>
+
       <form onSubmit={handleSubmit} className="flex flex-col gap-6">
         {/* カテゴリ選択 */}
         <div>

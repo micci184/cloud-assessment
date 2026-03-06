@@ -743,6 +743,11 @@ export const MeDashboard = () => {
                     )}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-1 text-xs text-neutral-500 dark:text-neutral-400">
+                    {filters.preset === "cloud-practitioner" && (
+                      <span className="rounded bg-brand-100 px-1.5 py-0.5 text-brand-700 dark:bg-brand-900/30 dark:text-brand-300">
+                        CLF-C02
+                      </span>
+                    )}
                     {filters.categories?.map((cat) => (
                       <span
                         key={cat}
@@ -754,6 +759,11 @@ export const MeDashboard = () => {
                     {filters.level && (
                       <span className="rounded bg-neutral-100 px-1.5 py-0.5 dark:bg-neutral-800">
                         Lv.{filters.level}
+                      </span>
+                    )}
+                    {filters.levels && filters.levels.length > 0 && (
+                      <span className="rounded bg-neutral-100 px-1.5 py-0.5 dark:bg-neutral-800">
+                        Lv.{filters.levels.join("/")}
                       </span>
                     )}
                   </div>
