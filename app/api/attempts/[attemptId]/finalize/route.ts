@@ -9,6 +9,7 @@ import {
   createAttemptFinalizedEvent,
   logAttemptFinalizedEvent,
 } from "@/lib/logging/attempt-events";
+import { parseQuestionIndices, parseQuestionChoices } from "@/lib/quiz/parsers";
 import { calculateScore } from "@/lib/quiz/scoring";
 
 type RouteContext = {
@@ -46,7 +47,15 @@ export const POST = async (
       include: {
         questions: {
           include: {
-            question: { select: { category: true, answerIndex: true } },
+            question: {
+              select: {
+                category: true,
+                answerIndex: true,
+                answerIndices: true,
+                questionType: true,
+                choices: true,
+              },
+            },
           },
         },
         result: true,
@@ -65,9 +74,27 @@ export const POST = async (
       return messageResponse("この試験は既に採点済みです", 400);
     }
 
-    const unanswered = attempt.questions.filter(
-      (aq) => aq.selectedIndex === null,
-    );
+    const unanswered = attempt.questions.filter((aq) => {
+      const choiceCount = parseQuestionChoices(aq.question.choices).length;
+      if (choiceCount === 0) {
+        return true;
+      }
+
+      const parsedSelectedIndices = parseQuestionIndices(
+        aq.selectedIndices,
+        choiceCount,
+      );
+
+      if (aq.question.questionType === "MULTIPLE") {
+        return parsedSelectedIndices.length === 0;
+      }
+
+      if (aq.selectedIndex !== null) {
+        return false;
+      }
+
+      return parsedSelectedIndices.length !== 1;
+    });
 
     if (unanswered.length > 0) {
       return messageResponse(
