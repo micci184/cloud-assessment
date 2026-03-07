@@ -17,8 +17,30 @@ export const createAttemptSchema = z.object({
     .array(z.string().min(1).max(200, "カテゴリ名が長すぎます"))
     .min(1, "カテゴリを1つ以上選択してください")
     .max(100, "カテゴリ数が多すぎます"),
-  level: z.number().int().min(1).max(3),
+  level: z.number().int().min(1).max(3).optional(),
+  levels: z.array(z.number().int().min(1).max(3)).min(1).optional(),
   count: z.number().int().min(1).max(50),
+  preset: z.enum(["cloud-practitioner"]).optional(),
+}).superRefine((value, context) => {
+  const hasLevel = value.level !== undefined;
+  const hasLevels = value.levels !== undefined;
+
+  if (hasLevel === hasLevels) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "level か levels のいずれか一方のみ指定してください",
+      path: ["level"],
+    });
+    return;
+  }
+
+  if (value.levels && new Set(value.levels).size !== value.levels.length) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "levels に重複値を含めることはできません",
+      path: ["levels"],
+    });
+  }
 });
 
 export const answerSchema = z.object({

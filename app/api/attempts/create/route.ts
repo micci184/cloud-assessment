@@ -61,12 +61,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
-    const { categories, level, count } = parsed.data;
+    const { categories, level, levels, count, preset } = parsed.data;
 
     const questions = await prisma.question.findMany({
       where: {
         category: { in: categories },
-        level,
+        level: level !== undefined ? level : { in: levels ?? [] },
       },
       select: {
         id: true,
@@ -88,7 +88,13 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       const newAttempt = await tx.attempt.create({
         data: {
           userId: user.id,
-          filters: { categories, level, count },
+          filters: {
+            categories,
+            count,
+            ...(level !== undefined ? { level } : {}),
+            ...(levels !== undefined ? { levels } : {}),
+            ...(preset ? { preset } : {}),
+          },
         },
       });
 

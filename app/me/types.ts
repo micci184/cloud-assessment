@@ -3,7 +3,9 @@ import type { CategoryScore } from "@/lib/quiz/types";
 export type AttemptFilters = {
   categories?: string[];
   level?: number;
+  levels?: number[];
   count?: number;
+  preset?: "cloud-practitioner";
 };
 
 export type AttemptSummary = {
