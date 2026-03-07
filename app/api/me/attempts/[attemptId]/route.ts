@@ -4,7 +4,12 @@ import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { getUserFromRequest } from "@/lib/auth/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-import { parseCategoryBreakdown, parseQuestionChoices } from "@/lib/quiz/parsers";
+import {
+  parseCategoryBreakdown,
+  parsePrimaryQuestionIndex,
+  parseQuestionIndices,
+  parseQuestionChoices,
+} from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -44,7 +49,7 @@ export const GET = async (
                 level: true,
                 questionText: true,
                 choices: true,
-                answerIndex: true,
+                answerIndices: true,
                 explanation: true,
               },
             },
@@ -64,25 +69,47 @@ export const GET = async (
 
     const isCompleted = attempt.status === "COMPLETED";
 
-    const questions = attempt.questions.map((aq) => ({
-      attemptQuestionId: aq.id,
-      order: aq.order,
-      selectedIndex: aq.selectedIndex,
-      isCorrect: isCompleted ? aq.isCorrect : null,
-      question: {
-        id: aq.question.id,
-        category: aq.question.category,
-        level: aq.question.level,
-        questionText: aq.question.questionText,
-        choices: parseQuestionChoices(aq.question.choices),
-        ...(isCompleted
-          ? {
-              answerIndex: aq.question.answerIndex,
-              explanation: aq.question.explanation,
-            }
-          : {}),
-      },
-    }));
+    const questions = attempt.questions.map((aq) => {
+      const parsedChoices = parseQuestionChoices(aq.question.choices);
+      const answerIndices = parseQuestionIndices(
+        aq.question.answerIndices,
+        parsedChoices.length,
+      );
+      const selectedIndex = parsePrimaryQuestionIndex(
+        aq.selectedIndices,
+        parsedChoices.length,
+      );
+      const selectedIndices = parseQuestionIndices(
+        aq.selectedIndices,
+        parsedChoices.length,
+      );
+      const answerIndex = parsePrimaryQuestionIndex(
+        aq.question.answerIndices,
+        parsedChoices.length,
+      );
+
+      return {
+        attemptQuestionId: aq.id,
+        order: aq.order,
+        selectedIndex,
+        selectedIndices,
+        isCorrect: isCompleted ? aq.isCorrect : null,
+        question: {
+          id: aq.question.id,
+          category: aq.question.category,
+          level: aq.question.level,
+          questionText: aq.question.questionText,
+          choices: parsedChoices,
+          ...(isCompleted
+            ? {
+                ...(answerIndex !== null ? { answerIndex } : {}),
+                answerIndices,
+                explanation: aq.question.explanation,
+              }
+            : {}),
+        },
+      };
+    });
 
     return NextResponse.json({
       id: attempt.id,

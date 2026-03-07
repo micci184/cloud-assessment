@@ -8,7 +8,11 @@ import {
   createAttemptExportPayload,
 } from "@/lib/attempt/export";
 import { prisma } from "@/lib/db/prisma";
-import { parseCategoryBreakdown, parseQuestionChoices } from "@/lib/quiz/parsers";
+import {
+  parseCategoryBreakdown,
+  parseQuestionIndices,
+  parseQuestionChoices,
+} from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -59,7 +63,7 @@ export const GET = async (
                 level: true,
                 questionText: true,
                 choices: true,
-                answerIndex: true,
+                answerIndices: true,
                 explanation: true,
               },
             },
@@ -96,17 +100,28 @@ export const GET = async (
           attempt.result.categoryBreakdown,
         ),
       },
-      questions: attempt.questions.map((question) => ({
-        order: question.order,
-        category: question.question.category,
-        level: question.question.level,
-        questionText: question.question.questionText,
-        choices: parseQuestionChoices(question.question.choices),
-        answerIndex: question.question.answerIndex,
-        selectedIndex: question.selectedIndex,
-        isCorrect: question.isCorrect,
-        explanation: question.question.explanation,
-      })),
+      questions: attempt.questions.map((question) => {
+        const choices = parseQuestionChoices(question.question.choices);
+        const choiceCount = choices.length;
+
+        return {
+          order: question.order,
+          category: question.question.category,
+          level: question.question.level,
+          questionText: question.question.questionText,
+          choices,
+          answerIndices: parseQuestionIndices(
+            question.question.answerIndices,
+            choiceCount,
+          ),
+          selectedIndices: parseQuestionIndices(
+            question.selectedIndices,
+            choiceCount,
+          ),
+          isCorrect: question.isCorrect,
+          explanation: question.question.explanation,
+        };
+      }),
     });
 
     if (formatParam === "json") {

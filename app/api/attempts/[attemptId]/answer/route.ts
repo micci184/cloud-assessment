@@ -8,7 +8,11 @@ import {
 } from "@/lib/api/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
-import { parseQuestionChoices, parseQuestionIndices } from "@/lib/quiz/parsers";
+import {
+  parsePrimaryQuestionIndex,
+  parseQuestionChoices,
+  parseQuestionIndices,
+} from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -24,6 +28,13 @@ const areSameIndexSet = (left: number[], right: number[]): boolean => {
   }
 
   return left.every((value, index) => value === right[index]);
+};
+
+const getNormalizedSelectedIndices = (
+  value: unknown,
+  choiceCount: number,
+): number[] => {
+  return parseQuestionIndices(value, choiceCount);
 };
 
 export const POST = async (
@@ -91,7 +102,6 @@ export const POST = async (
       include: {
         question: {
           select: {
-            answerIndex: true,
             answerIndices: true,
             questionType: true,
             choices: true,
@@ -104,10 +114,7 @@ export const POST = async (
       return messageResponse("question not found", 404);
     }
 
-    if (
-      attemptQuestion.selectedIndex !== null ||
-      attemptQuestion.selectedIndices !== null
-    ) {
+    if (attemptQuestion.answeredAt !== null) {
       return messageResponse("この問題は既に回答済みです", 400);
     }
 
@@ -121,10 +128,10 @@ export const POST = async (
       attemptQuestion.question.answerIndices,
       choiceCount,
     );
-    const correctIndices =
-      normalizedCorrectIndices.length > 0
-        ? normalizedCorrectIndices
-        : [attemptQuestion.question.answerIndex];
+    const correctIndices = normalizedCorrectIndices;
+    if (correctIndices.length === 0) {
+      return messageResponse("問題データが不正です", 400);
+    }
 
     if (isSingleQuestionType(attemptQuestion.question.questionType)) {
       if (selectedIndex === undefined || selectedIndices !== undefined) {
@@ -138,11 +145,14 @@ export const POST = async (
         return messageResponse("selectedIndex が不正です", 400);
       }
 
-      const isCorrect = selectedIndex === attemptQuestion.question.answerIndex;
+      const expectedIndex = correctIndices[0];
+      if (expectedIndex === undefined) {
+        return messageResponse("問題データが不正です", 400);
+      }
+      const isCorrect = selectedIndex === expectedIndex;
       const updated = await prisma.attemptQuestion.update({
         where: { id: attemptQuestionId },
         data: {
-          selectedIndex,
           selectedIndices: [selectedIndex],
           isCorrect,
           answeredAt: new Date(),
@@ -151,7 +161,7 @@ export const POST = async (
 
       return NextResponse.json({
         attemptQuestionId: updated.id,
-        selectedIndex: updated.selectedIndex,
+        selectedIndex,
         selectedIndices: [selectedIndex],
       });
     }
@@ -163,7 +173,7 @@ export const POST = async (
       );
     }
 
-    const normalizedSelectedIndices = parseQuestionIndices(
+    const normalizedSelectedIndices = getNormalizedSelectedIndices(
       selectedIndices,
       choiceCount,
     );
@@ -183,7 +193,6 @@ export const POST = async (
     const updated = await prisma.attemptQuestion.update({
       where: { id: attemptQuestionId },
       data: {
-        selectedIndex: null,
         selectedIndices: normalizedSelectedIndices,
         isCorrect,
         answeredAt: new Date(),
@@ -192,7 +201,10 @@ export const POST = async (
 
     return NextResponse.json({
       attemptQuestionId: updated.id,
-      selectedIndex: updated.selectedIndex,
+      selectedIndex: parsePrimaryQuestionIndex(
+        normalizedSelectedIndices,
+        choiceCount,
+      ),
       selectedIndices: normalizedSelectedIndices,
     });
   } catch (error) {

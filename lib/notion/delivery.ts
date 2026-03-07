@@ -6,8 +6,8 @@ type NotionDeliveryInput = {
     level: number;
     questionText: string;
     choices: string[];
-    answerIndex: number;
-    selectedIndex: number | null;
+    answerIndices: number[];
+    selectedIndices: number[];
     isCorrect: boolean | null;
     explanation: string;
   }>;
@@ -242,9 +242,14 @@ const createQuestionRow = async (
   attemptId: string,
   question: NotionDeliveryInput["questions"][number],
 ): Promise<void> => {
-  const selectedChoice =
-    question.selectedIndex === null ? "" : (question.choices[question.selectedIndex] ?? "");
-  const answerChoice = question.choices[question.answerIndex] ?? "";
+  const selectedChoice = question.selectedIndices
+    .map((index) => question.choices[index])
+    .filter((choice): choice is string => typeof choice === "string")
+    .join(" | ");
+  const answerChoice = question.answerIndices
+    .map((index) => question.choices[index])
+    .filter((choice): choice is string => typeof choice === "string")
+    .join(" | ");
 
   const response = await notionRequest(
     config,

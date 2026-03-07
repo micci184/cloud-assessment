@@ -74,8 +74,20 @@ export const AttemptDetailView = ({ attempt }: Props) => {
 
               <div className="mb-3 flex flex-col gap-1.5">
                 {q.question.choices.map((choice, i) => {
-                  const isAnswer = i === q.question.answerIndex;
-                  const isUserChoice = i === q.selectedIndex;
+                  const answerIndices =
+                    q.question.answerIndices && q.question.answerIndices.length > 0
+                      ? q.question.answerIndices
+                      : q.question.answerIndex !== undefined
+                        ? [q.question.answerIndex]
+                        : [];
+                  const selectedIndices =
+                    q.selectedIndices && q.selectedIndices.length > 0
+                      ? q.selectedIndices
+                      : q.selectedIndex !== null
+                        ? [q.selectedIndex]
+                        : [];
+                  const isAnswer = answerIndices.includes(i);
+                  const isUserChoice = selectedIndices.includes(i);
 
                   return (
                     <div

@@ -10,6 +10,7 @@ import {
   type NotionDeliveryInput,
 } from "@/lib/notion/delivery";
 import { runNotionDeliveryJob } from "@/lib/notion/job";
+import { parseQuestionIndices, parseQuestionChoices } from "@/lib/quiz/parsers";
 
 type RouteContext = {
   params: Promise<{ attemptId: string }>;
@@ -72,14 +73,14 @@ const buildDeliveryInput = (
     id: string;
     status: "IN_PROGRESS" | "COMPLETED";
     questions: Array<{
-      selectedIndex: number | null;
+      selectedIndices: unknown;
       isCorrect: boolean | null;
       question: {
         category: string;
         level: number;
         questionText: string;
         choices: unknown;
-        answerIndex: number;
+        answerIndices: unknown;
         explanation: string;
       };
     }>;
@@ -89,19 +90,19 @@ const buildDeliveryInput = (
     attemptId: attempt.id,
     status: attempt.status,
     questions: attempt.questions.map((question) => {
-      const validatedChoices =
-        Array.isArray(question.question.choices) &&
-        question.question.choices.every((choice) => typeof choice === "string")
-          ? question.question.choices
-          : [];
+      const validatedChoices = parseQuestionChoices(question.question.choices);
+      const choiceCount = validatedChoices.length;
 
       return {
         category: question.question.category,
         level: question.question.level,
         questionText: question.question.questionText,
         choices: validatedChoices,
-        answerIndex: question.question.answerIndex,
-        selectedIndex: question.selectedIndex,
+        answerIndices: parseQuestionIndices(
+          question.question.answerIndices,
+          choiceCount,
+        ),
+        selectedIndices: parseQuestionIndices(question.selectedIndices, choiceCount),
         isCorrect: question.isCorrect,
         explanation: question.question.explanation,
       };
@@ -161,7 +162,7 @@ const loadAttemptForDelivery = async (
               level: true,
               questionText: true,
               choices: true,
-              answerIndex: true,
+              answerIndices: true,
               explanation: true,
             },
           },

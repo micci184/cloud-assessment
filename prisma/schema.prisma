@@ -42,7 +42,6 @@ model Question {
   questionType     QuestionType      @default(SINGLE)
   questionText     String
   choices          Json
-  answerIndex      Int
   answerIndices    Json?
   explanation      String
   createdAt        DateTime          @default(now())
@@ -76,7 +75,6 @@ model AttemptQuestion {
   questionId   String
   order        Int
   choiceOrder  Json?
-  selectedIndex Int?
   selectedIndices Json?
   isCorrect    Boolean?
   answeredAt   DateTime?

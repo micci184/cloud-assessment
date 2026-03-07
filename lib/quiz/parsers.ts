@@ -70,6 +70,14 @@ export const parseQuestionIndices = (
   return [...new Set(parsed.data)].sort((a, b) => a - b);
 };
 
+export const parsePrimaryQuestionIndex = (
+  value: unknown,
+  choicesCount: number,
+): number | null => {
+  const indices = parseQuestionIndices(value, choicesCount);
+  return indices[0] ?? null;
+};
+
 export const parseCategoryBreakdown = (value: unknown): CategoryScore[] => {
   const parsed = categoryBreakdownSchema.safeParse(value);
   return parsed.success ? parsed.data : [];

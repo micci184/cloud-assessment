@@ -143,7 +143,7 @@ export const GET = async (request: Request): Promise<NextResponse> => {
             attempt: {
               userId: user.id,
             },
-            selectedIndex: {
+            answeredAt: {
               not: null,
             },
           },

@@ -361,7 +361,6 @@ const main = async (): Promise<void> => {
       questionType: "SINGLE",
       questionText: question.questionText,
       choices: question.choices as Prisma.JsonArray,
-      answerIndex: question.answerIndex,
       answerIndices: [question.answerIndex] as Prisma.JsonArray,
       explanation: question.explanation,
     })),
