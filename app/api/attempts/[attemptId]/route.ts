@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db/prisma";
 import {
   parseCategoryBreakdown,
   parseChoiceOrder,
+  parsePrimaryQuestionIndex,
   parseQuestionIndices,
   parseQuestionChoices,
 } from "@/lib/quiz/parsers";
@@ -50,7 +51,6 @@ export const GET = async (
                 questionType: true,
                 questionText: true,
                 choices: true,
-                answerIndex: true,
                 answerIndices: true,
                 explanation: true,
               },
@@ -78,7 +78,7 @@ export const GET = async (
       const answerIndices =
         parsedAnswerIndices.length > 0
           ? parsedAnswerIndices
-          : [aq.question.answerIndex];
+          : [];
       const parsedSelectedIndices = parseQuestionIndices(
         aq.selectedIndices,
         parsedChoices.length,
@@ -86,15 +86,21 @@ export const GET = async (
       const selectedIndices =
         parsedSelectedIndices.length > 0
           ? parsedSelectedIndices
-          : aq.selectedIndex !== null
-            ? [aq.selectedIndex]
             : null;
+      const answerIndex = parsePrimaryQuestionIndex(
+        aq.question.answerIndices,
+        parsedChoices.length,
+      );
+      const selectedIndex = parsePrimaryQuestionIndex(
+        aq.selectedIndices,
+        parsedChoices.length,
+      );
 
       return {
         attemptQuestionId: aq.id,
         order: aq.order,
         choiceOrder: parseChoiceOrder(aq.choiceOrder, parsedChoices.length),
-        selectedIndex: aq.selectedIndex,
+        selectedIndex,
         selectedIndices,
         isCorrect: aq.isCorrect,
         answeredAt: aq.answeredAt,
@@ -107,7 +113,7 @@ export const GET = async (
           choices: parsedChoices,
           ...(attempt.status === "COMPLETED"
             ? {
-                answerIndex: aq.question.answerIndex,
+                ...(answerIndex !== null ? { answerIndex } : {}),
                 answerIndices,
                 explanation: aq.question.explanation,
               }

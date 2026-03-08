@@ -50,7 +50,6 @@ export const POST = async (
             question: {
               select: {
                 category: true,
-                answerIndex: true,
                 answerIndices: true,
                 questionType: true,
                 choices: true,
@@ -87,10 +86,6 @@ export const POST = async (
 
       if (aq.question.questionType === "MULTIPLE") {
         return parsedSelectedIndices.length === 0;
-      }
-
-      if (aq.selectedIndex !== null) {
-        return false;
       }
 
       return parsedSelectedIndices.length !== 1;

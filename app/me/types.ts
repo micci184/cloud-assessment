@@ -24,6 +24,7 @@ export type QuestionDetail = {
   attemptQuestionId: string;
   order: number;
   selectedIndex: number | null;
+  selectedIndices?: number[] | null;
   isCorrect: boolean | null;
   question: {
     id: string;
@@ -32,6 +33,7 @@ export type QuestionDetail = {
     questionText: string;
     choices: string[];
     answerIndex?: number;
+    answerIndices?: number[];
     explanation?: string;
   };
 };

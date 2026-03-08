@@ -17,8 +17,8 @@ type ExportQuestionItem = {
   level: number;
   questionText: string;
   choices: string[];
-  answerIndex: number;
-  selectedIndex: number | null;
+  answerIndices: number[];
+  selectedIndices: number[];
   isCorrect: boolean | null;
   explanation: string;
 };
@@ -87,10 +87,16 @@ export const createAttemptExportCsv = (payload: AttemptExportPayload): string =>
 
   for (const question of payload.questions) {
     const selectedChoice =
-      question.selectedIndex === null
+      question.selectedIndices.length === 0
         ? null
-        : question.choices[question.selectedIndex] ?? null;
-    const answerChoice = question.choices[question.answerIndex] ?? "";
+        : question.selectedIndices
+            .map((index) => question.choices[index])
+            .filter((choice): choice is string => typeof choice === "string")
+            .join(" | ");
+    const answerChoice = question.answerIndices
+      .map((index) => question.choices[index])
+      .filter((choice): choice is string => typeof choice === "string")
+      .join(" | ");
 
     lines.push(
       [

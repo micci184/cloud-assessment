@@ -114,8 +114,9 @@ const main = async (): Promise<void> => {
         await tx.question.update({
           where: { id: existing.id },
           data: {
+            questionType: "SINGLE",
             choices: choices as Prisma.JsonArray,
-            answerIndex: row.answerIndex,
+            answerIndices: [row.answerIndex] as Prisma.JsonArray,
             explanation: row.explanation,
           },
         });
@@ -124,8 +125,9 @@ const main = async (): Promise<void> => {
         await tx.question.create({
           data: {
             ...where,
+            questionType: "SINGLE",
             choices: choices as Prisma.JsonArray,
-            answerIndex: row.answerIndex,
+            answerIndices: [row.answerIndex] as Prisma.JsonArray,
             explanation: row.explanation,
           },
         });
