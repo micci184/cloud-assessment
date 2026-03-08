@@ -173,7 +173,27 @@ npm run db:migrate   # マイグレーション実行
 npm run db:seed      # Seedデータ投入
 npm run db:studio    # Prisma Studio起動
 npm run import:questions # CSVから問題を登録/更新
+npm run test:e2e     # Playwright E2E実行（認証導線）
 ```
+
+## 認証導線E2Eテスト
+
+Playwrightで以下の認証導線を自動テストしています。
+
+- 正常系: `signup -> login -> logout`
+- 異常系: 重複メール / 誤パスワード
+- 認証ガード: 未ログイン時に `/select` `/me` `/quiz/[attemptId]` へ直接アクセスすると `/login` に遷移
+
+実行コマンド:
+
+```bash
+npm run test:e2e
+```
+
+テストデータ方針:
+
+- E2Eでは毎回ユニークなメールアドレスを生成し、テスト同士の衝突を避けます。
+- 既存ユーザー/既存データへの依存は持たせません。
 
 ## 設計ドキュメント
 
