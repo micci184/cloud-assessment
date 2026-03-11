@@ -171,139 +171,161 @@ export const SelectForm = () => {
     selectedCategories.length === categories.length;
 
   return (
-    <section className="mx-auto w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-8 dark:border-white/15 dark:bg-black/50">
-      <h1 className="mb-6 text-2xl font-semibold">問題条件を選択</h1>
-
-      <section className="mb-6 rounded-xl border border-brand-200/60 bg-brand-50/70 p-4 dark:border-brand-500/40 dark:bg-brand-900/20">
-        <h2 className="text-sm font-semibold text-brand-700 dark:text-brand-200">おすすめ設定</h2>
-        <p className="mt-1 text-xs text-neutral-700 dark:text-neutral-300">
-          AWS Certified Cloud Practitioner 向けの推奨設定（カテゴリ固定・Lv.1〜3混在・30問）です。
+    <div className="mx-auto w-full max-w-5xl space-y-5">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold sm:text-3xl">問題条件を選択</h1>
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          資格対策は推奨設定で開始、通常学習はカテゴリやレベルを自由に設定できます。
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            void handleStartCloudPractitioner();
-          }}
-          disabled={isSubmitting}
-          className="mt-3 rounded-lg border border-brand-400 bg-white px-3 py-2 text-xs font-medium text-brand-700 transition hover:bg-brand-100 dark:border-brand-300 dark:bg-black/30 dark:text-brand-200 dark:hover:bg-brand-900/40"
+      </header>
+
+      {error && (
+        <p
+          ref={errorRef}
+          tabIndex={-1}
+          role="alert"
+          aria-live="assertive"
+          className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 outline-none dark:bg-red-900/20 dark:text-red-400"
         >
-          Cloud Practitioner推奨設定で開始
-        </button>
-      </section>
+          {error}
+        </p>
+      )}
 
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        {/* カテゴリ選択 */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-              カテゴリ
-            </label>
-            <button
-              type="button"
-              onClick={isAllSelected ? deselectAllCategories : selectAllCategories}
-              aria-pressed={isAllSelected}
-              aria-label={
-                isAllSelected
-                  ? "カテゴリの全選択を解除"
-                  : "カテゴリをすべて選択"
-              }
-              className="text-xs text-brand-600 hover:underline dark:text-brand-300"
-            >
-              {isAllSelected ? "すべて解除" : "すべて選択"}
-            </button>
-          </div>
-          <div role="group" aria-label="カテゴリ選択" className="flex flex-wrap gap-2">
-            {categories.map((cat) => {
-              const isSelected = selectedCategories.includes(cat.category);
-
-              return (
-                <button
-                  key={cat.category}
-                  type="button"
-                  onClick={() => toggleCategory(cat.category)}
-                  aria-pressed={isSelected}
-                  aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
-                  className={`rounded-lg border px-3 py-1.5 text-sm transition ${
-                    isSelected
-                      ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                      : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                  }`}
-                  disabled={isSubmitting}
-                >
-                  {cat.category}
-                  <span className="ml-1 text-xs opacity-60">({cat.count})</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* レベル選択 */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            レベル
-          </label>
-          <div role="group" aria-label="レベル選択" className="flex gap-2">
-            {[1, 2, 3].map((l) => (
-              <button
-                key={l}
-                type="button"
-                onClick={() => setLevel(l)}
-                aria-pressed={level === l}
-                aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
-                className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                  level === l
-                    ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                    : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                }`}
-                disabled={isSubmitting}
-              >
-                Lv.{l}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 問題数 */}
-        <div>
-          <label
-            htmlFor="count"
-            className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-          >
-            問題数
-          </label>
-          <input
-            id="count"
-            type="number"
-            min={1}
-            max={50}
-            value={count}
-            onChange={(event) => setCount(Number(event.target.value))}
-            className="w-24 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
-            disabled={isSubmitting}
-          />
-        </div>
-
-        {error && (
-          <p
-            ref={errorRef}
-            tabIndex={-1}
-            role="alert"
-            aria-live="assertive"
-            className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600 outline-none dark:bg-red-900/20 dark:text-red-400"
-          >
-            {error}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <section className="rounded-2xl border border-brand-300/70 bg-brand-200/20 p-6 dark:border-brand-400/45 dark:bg-brand-400/10">
+          <p className="text-xs font-semibold tracking-wide text-brand-700 dark:text-brand-200">
+            資格対策
           </p>
-        )}
+          <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
+          <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
+            AWS Certified Cloud Practitioner を想定した設定で、すぐに学習を開始できます。
+          </p>
+          <ul className="mt-4 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+            <li>・カテゴリ: CloudTrail / CloudWatch / EC2 / IAM / Lambda / RDS / S3 / VPC</li>
+            <li>・レベル: Lv.1〜3 混在</li>
+            <li>・問題数: 30問</li>
+          </ul>
+          <button
+            type="button"
+            onClick={() => {
+              void handleStartCloudPractitioner();
+            }}
+            disabled={isSubmitting}
+            className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+          >
+            {isSubmitting ? "作成中..." : "推奨設定で開始する"}
+          </button>
+        </section>
 
-        <button
-          type="submit"
-          disabled={isSubmitting || selectedCategories.length === 0}
-          className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
-        >
-          {isSubmitting ? "作成中..." : "テストを開始"}
-        </button>
-      </form>
-    </section>
+        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
+            カスタム学習
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">自分で条件を決めて開始</h2>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            カテゴリ・レベル・問題数を自由に選んで学習します。
+          </p>
+
+          <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-6">
+            <div>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  カテゴリ
+                </label>
+                <button
+                  type="button"
+                  onClick={isAllSelected ? deselectAllCategories : selectAllCategories}
+                  aria-pressed={isAllSelected}
+                  aria-label={
+                    isAllSelected
+                      ? "カテゴリの全選択を解除"
+                      : "カテゴリをすべて選択"
+                  }
+                  className="text-xs text-brand-600 hover:underline dark:text-brand-300"
+                >
+                  {isAllSelected ? "すべて解除" : "すべて選択"}
+                </button>
+              </div>
+              <div role="group" aria-label="カテゴリ選択" className="flex flex-wrap gap-2">
+                {categories.map((cat) => {
+                  const isSelected = selectedCategories.includes(cat.category);
+
+                  return (
+                    <button
+                      key={cat.category}
+                      type="button"
+                      onClick={() => toggleCategory(cat.category)}
+                      aria-pressed={isSelected}
+                      aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
+                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                        isSelected
+                          ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                          : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      {cat.category}
+                      <span className="ml-1 text-xs opacity-60">({cat.count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                レベル
+              </label>
+              <div role="group" aria-label="レベル選択" className="flex gap-2">
+                {[1, 2, 3].map((l) => (
+                  <button
+                    key={l}
+                    type="button"
+                    onClick={() => setLevel(l)}
+                    aria-pressed={level === l}
+                    aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
+                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                      level === l
+                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                    }`}
+                    disabled={isSubmitting}
+                  >
+                    Lv.{l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label
+                htmlFor="count"
+                className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300"
+              >
+                問題数
+              </label>
+              <input
+                id="count"
+                type="number"
+                min={1}
+                max={50}
+                value={count}
+                onChange={(event) => setCount(Number(event.target.value))}
+                className="w-24 rounded-lg border border-neutral-300 bg-transparent px-3 py-2 text-sm outline-none transition focus:border-brand-400 focus:ring-2 focus:ring-brand-300/30 dark:border-neutral-600 dark:focus:border-brand-300 dark:focus:ring-brand-300/30"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSubmitting || selectedCategories.length === 0}
+              className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+            >
+              {isSubmitting ? "作成中..." : "テストを開始"}
+            </button>
+          </form>
+        </section>
+      </div>
+    </div>
   );
 };
