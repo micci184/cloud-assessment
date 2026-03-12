@@ -501,19 +501,15 @@ export const QuizRunner = ({ attemptId }: Props) => {
                       : "border-neutral-300 text-neutral-700 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-300 dark:hover:border-neutral-500"
                   } disabled:cursor-not-allowed disabled:opacity-70`}
                 >
-                  <span className="mr-2 inline-flex w-12 items-center justify-between font-medium">
-                    <span aria-hidden="true" className="text-base leading-none">
-                      {isCurrentMultiple
-                        ? isSelected
-                          ? "☑"
-                          : "☐"
-                        : isSelected
-                          ? "◉"
-                          : "○"}
-                    </span>
-                    <span>{String.fromCharCode(65 + index)}.</span>
+                  <span className="mr-2 font-semibold text-neutral-500 dark:text-neutral-400">
+                    {String.fromCharCode(65 + index)}.
                   </span>
                   {choice}
+                  {isSelected && (
+                    <span className="ml-2 text-xs font-medium text-brand-700 dark:text-brand-300">
+                      選択中
+                    </span>
+                  )}
                 </button>
               );
             })}
