@@ -88,20 +88,23 @@ const LoginPage = () => {
 
       if (!response.ok) {
         const data = (await response.json()) as { message?: string };
+        const apiMessage = data.message;
 
         if (mode === "signup" && response.status === 400) {
           setErrors({
-            form: "アカウント作成に失敗しました。入力内容をご確認ください",
+            form: apiMessage ?? "アカウント作成に失敗しました。入力内容をご確認ください",
           });
         } else if (response.status === 401) {
-          setErrors({ form: "メールアドレスまたはパスワードが正しくありません" });
+          setErrors({
+            form: apiMessage ?? "メールアドレスまたはパスワードが正しくありません",
+          });
         } else if (response.status === 429) {
           setErrors({
-            form: "試行回数が上限に達しました。時間をおいて再試行してください",
+            form: apiMessage ?? "試行回数が上限に達しました。時間をおいて再試行してください",
           });
         } else {
           setErrors({
-            form: data.message ?? "エラーが発生しました。もう一度お試しください",
+            form: apiMessage ?? "エラーが発生しました。もう一度お試しください",
           });
         }
 
