@@ -394,6 +394,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
   }
 
   const allAnswered = attempt.questions.every((q) => isQuestionAnswered(q));
+  const answeredCount = attempt.questions.filter((q) => isQuestionAnswered(q)).length;
   const currentQuestion = attempt.questions[currentIndex];
   const currentChoiceOrder = currentQuestion
     ? getChoiceOrder(currentQuestion)
@@ -401,6 +402,7 @@ export const QuizRunner = ({ attemptId }: Props) => {
   const isCurrentMultiple = currentQuestion
     ? isMultipleChoiceQuestion(currentQuestion)
     : false;
+  const progressPercent = (answeredCount / attempt.questions.length) * 100;
 
   if (!currentQuestion) return null;
 
@@ -411,18 +413,12 @@ export const QuizRunner = ({ attemptId }: Props) => {
         <span>
           問題 {currentIndex + 1} / {attempt.questions.length}
         </span>
-        <span>
-          回答済み:{" "}
-          {attempt.questions.filter((q) => isQuestionAnswered(q)).length} /{" "}
-          {attempt.questions.length}
-        </span>
+        <span>回答済み: {answeredCount} / {attempt.questions.length}</span>
       </div>
       <div className="h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
         <div
           className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
-          style={{
-            width: `${(attempt.questions.filter((q) => isQuestionAnswered(q)).length / attempt.questions.length) * 100}%`,
-          }}
+          style={{ width: `${progressPercent}%` }}
         />
       </div>
 
@@ -499,14 +495,23 @@ export const QuizRunner = ({ attemptId }: Props) => {
                   aria-checked={isSelected}
                   aria-disabled={!canAnswer}
                   disabled={!canAnswer}
-                  className={`rounded-lg border px-4 py-3 text-left text-sm transition ${
+                  className={`rounded-xl border px-4 py-3.5 text-left text-sm transition ${
                     isSelected
-                      ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                      ? "border-brand-400 bg-brand-200/40 text-neutral-900 shadow-sm dark:border-brand-300 dark:bg-brand-400/20 dark:text-neutral-100"
                       : "border-neutral-300 text-neutral-700 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-300 dark:hover:border-neutral-500"
                   } disabled:cursor-not-allowed disabled:opacity-70`}
                 >
-                  <span className="mr-2 font-medium">
-                    {String.fromCharCode(65 + index)}.
+                  <span className="mr-2 inline-flex w-12 items-center justify-between font-medium">
+                    <span aria-hidden="true" className="text-base leading-none">
+                      {isCurrentMultiple
+                        ? isSelected
+                          ? "☑"
+                          : "☐"
+                        : isSelected
+                          ? "◉"
+                          : "○"}
+                    </span>
+                    <span>{String.fromCharCode(65 + index)}.</span>
                   </span>
                   {choice}
                 </button>
@@ -600,9 +605,9 @@ export const QuizRunner = ({ attemptId }: Props) => {
             }}
             aria-current={i === currentIndex ? "true" : undefined}
             aria-label={`問題 ${q.order}${isQuestionAnswered(q) ? "（回答済み）" : "（未回答）"}`}
-            className={`h-8 w-8 rounded text-xs font-medium transition ${
+            className={`h-9 w-9 rounded-md text-xs font-medium transition ${
               i === currentIndex
-                ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
+                ? "scale-105 bg-brand-300 text-neutral-900 shadow-sm ring-2 ring-brand-300/40 dark:bg-brand-400 dark:text-white dark:ring-brand-300/30"
                 : isQuestionAnswered(q)
                   ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
                   : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400"
@@ -626,17 +631,20 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
-      <section className="rounded-2xl border border-black/10 bg-white p-8 dark:border-white/15 dark:bg-black/50">
+      <section className="rounded-2xl border border-black/10 bg-white p-8 shadow-sm dark:border-white/15 dark:bg-black/50">
         <h1 className="mb-2 text-center text-2xl font-semibold">テスト結果</h1>
         <p className="mb-6 text-center text-sm text-neutral-600 dark:text-neutral-400">
           全{attempt.questions.length}問
         </p>
 
         <div className="mb-8 text-center">
-          <span className="text-5xl font-bold text-brand-600 dark:text-brand-300">
+          <p className="mb-1 text-xs tracking-wide text-neutral-500 dark:text-neutral-400">
+            達成率
+          </p>
+          <span className="text-6xl font-bold text-brand-600 dark:text-brand-300">
             {result.overallPercent}
           </span>
-          <span className="ml-1 text-2xl text-neutral-500">%</span>
+          <span className="ml-1 text-3xl text-neutral-500">%</span>
         </div>
 
         {/* カテゴリ別 */}
@@ -650,7 +658,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
                 {cat.category}
               </span>
               <div className="flex-1">
-                <div className="h-3 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+                <div className="h-4 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
                   <div
                     className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
                     style={{ width: `${cat.percent}%` }}
@@ -671,7 +679,7 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
         {attempt.questions.map((q) => (
           <div
             key={q.attemptQuestionId}
-            className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50"
+            className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50"
           >
             <div className="mb-2 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
               <span className="rounded bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800">
@@ -715,12 +723,12 @@ const ResultView = ({ attempt }: { attempt: AttemptData }) => {
                 return (
                   <div
                     key={i}
-                    className={`rounded-lg px-3 py-2 text-sm ${
+                    className={`rounded-lg px-3 py-2.5 text-sm ${
                       isAnswer
-                        ? "border border-green-300 bg-green-50 dark:border-green-700 dark:bg-green-900/20"
+                        ? "border border-green-400 bg-green-50 text-green-900 dark:border-green-700 dark:bg-green-900/25 dark:text-green-100"
                         : isUserChoice && !isAnswer
-                          ? "border border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-900/20"
-                          : "border border-transparent"
+                          ? "border border-red-400 bg-red-50 text-red-900 dark:border-red-700 dark:bg-red-900/25 dark:text-red-100"
+                          : "border border-neutral-200 text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
                     }`}
                   >
                     <span className="mr-2 font-medium">
