@@ -307,13 +307,8 @@ export const SelectForm = () => {
           </p>
           <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            AWS Certified Cloud Practitioner を想定した設定で、すぐに学習を開始できます。
+            AWS Certified Cloud Practitioner 想定の出題範囲で、30問のテストを開始します。
           </p>
-          <ul className="mt-4 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-            <li>・カテゴリ: CloudTrail / CloudWatch / EC2 / IAM / Lambda / RDS / S3 / VPC</li>
-            <li>・レベル: Lv.1〜3 混在</li>
-            <li>・問題数: 30問</li>
-          </ul>
           <button
             type="button"
             onClick={() => {
@@ -322,7 +317,7 @@ export const SelectForm = () => {
             disabled={isSubmitting}
             className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
           >
-            {isSubmitting ? "作成中..." : "推奨設定で開始する"}
+            {isSubmitting ? "作成中..." : "テストを開始"}
           </button>
         </section>
       </div>
