@@ -191,32 +191,7 @@ export const SelectForm = () => {
         </p>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-brand-300/70 bg-brand-200/20 p-6 dark:border-brand-400/45 dark:bg-brand-400/10">
-          <p className="text-xs font-semibold tracking-wide text-brand-700 dark:text-brand-200">
-            資格対策
-          </p>
-          <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
-          <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">
-            AWS Certified Cloud Practitioner を想定した設定で、すぐに学習を開始できます。
-          </p>
-          <ul className="mt-4 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-            <li>・カテゴリ: CloudTrail / CloudWatch / EC2 / IAM / Lambda / RDS / S3 / VPC</li>
-            <li>・レベル: Lv.1〜3 混在</li>
-            <li>・問題数: 30問</li>
-          </ul>
-          <button
-            type="button"
-            onClick={() => {
-              void handleStartCloudPractitioner();
-            }}
-            disabled={isSubmitting}
-            className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
-          >
-            {isSubmitting ? "作成中..." : "推奨設定で開始する"}
-          </button>
-        </section>
-
+      <div className="space-y-4">
         <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
           <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             カスタム学習
@@ -324,6 +299,31 @@ export const SelectForm = () => {
               {isSubmitting ? "作成中..." : "テストを開始"}
             </button>
           </form>
+        </section>
+
+        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
+            資格対策
+          </p>
+          <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
+          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+            AWS Certified Cloud Practitioner を想定した設定で、すぐに学習を開始できます。
+          </p>
+          <ul className="mt-4 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+            <li>・カテゴリ: CloudTrail / CloudWatch / EC2 / IAM / Lambda / RDS / S3 / VPC</li>
+            <li>・レベル: Lv.1〜3 混在</li>
+            <li>・問題数: 30問</li>
+          </ul>
+          <button
+            type="button"
+            onClick={() => {
+              void handleStartCloudPractitioner();
+            }}
+            disabled={isSubmitting}
+            className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+          >
+            {isSubmitting ? "作成中..." : "推奨設定で開始する"}
+          </button>
         </section>
       </div>
     </div>

@@ -44,7 +44,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const rateLimitCheck = checkLoginRateLimit(rateLimitKey);
     if (!rateLimitCheck.allowed) {
       return NextResponse.json(
-        { message: "too many login attempts. please try again later" },
+        { message: "ログイン試行回数が上限に達しました。時間をおいて再試行してください" },
         {
           status: 429,
           headers: {
@@ -67,7 +67,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
     if (!user) {
       registerFailedLoginAttempt(rateLimitKey);
-      return messageResponse("invalid credentials", 401);
+      return messageResponse("メールアドレスまたはパスワードが正しくありません", 401);
     }
 
     const passwordMatched = await verifyPassword(
@@ -77,7 +77,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
 
     if (!passwordMatched) {
       registerFailedLoginAttempt(rateLimitKey);
-      return messageResponse("invalid credentials", 401);
+      return messageResponse("メールアドレスまたはパスワードが正しくありません", 401);
     }
 
     const token = createSessionToken({

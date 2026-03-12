@@ -41,7 +41,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const rateLimitCheck = checkSignupRateLimit(rateLimitKey);
     if (!rateLimitCheck.allowed) {
       return NextResponse.json(
-        { message: "too many signup attempts. please try again later" },
+        { message: "新規登録の試行回数が上限に達しました。時間をおいて再試行してください" },
         {
           status: 429,
           headers: {
@@ -54,7 +54,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const attemptResult = registerSignupAttempt(rateLimitKey);
     if (!attemptResult.allowed) {
       return NextResponse.json(
-        { message: "too many signup attempts. please try again later" },
+        { message: "新規登録の試行回数が上限に達しました。時間をおいて再試行してください" },
         {
           status: 429,
           headers: {
@@ -92,7 +92,7 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2002"
     ) {
-      return messageResponse("signup failed", 400);
+      return messageResponse("このメールアドレスは既に登録されています。ログインしてください", 400);
     }
 
     return internalServerErrorResponse(error);
