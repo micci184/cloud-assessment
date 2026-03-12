@@ -124,27 +124,12 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="relative isolate flex items-center justify-center py-10 sm:py-14">
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute left-4 top-6 h-24 w-24 rounded-3xl border border-brand-300/40 bg-brand-200/20 dark:border-brand-400/35 dark:bg-brand-400/10 sm:left-12 sm:top-10 sm:h-28 sm:w-28" />
-        <div className="absolute right-4 top-20 h-16 w-16 rounded-2xl border border-black/10 bg-white/70 dark:border-white/15 dark:bg-black/40 sm:right-16 sm:h-20 sm:w-20" />
-        <div className="absolute bottom-8 left-1/2 h-10 w-10 -translate-x-1/2 rounded-lg border border-brand-300/40 bg-brand-200/30 dark:border-brand-400/35 dark:bg-brand-400/10" />
-      </div>
-
+    <div className="flex items-center justify-center py-10 sm:py-14">
       <section className="w-full max-w-md rounded-3xl border border-black/10 bg-white/95 p-7 shadow-[0_16px_40px_-24px_rgba(23,23,23,0.45)] dark:border-white/15 dark:bg-black/55 dark:shadow-[0_18px_42px_-24px_rgba(0,0,0,0.85)] sm:p-8">
-        <p className="mb-2 inline-flex rounded-full border border-brand-300/60 bg-brand-200/20 px-2.5 py-1 text-[11px] font-medium tracking-wide text-brand-700 dark:border-brand-400/50 dark:bg-brand-400/15 dark:text-brand-200">
-          Cloud Assessment
-        </p>
         <h1 className="text-2xl font-semibold sm:text-[1.7rem]">
           {mode === "login" ? "ログイン" : "アカウント作成"}
         </h1>
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-          {mode === "login"
-            ? "学習を再開するために、メールアドレスとパスワードを入力してください。"
-            : "はじめて利用する場合は、アカウントを作成してください。"}
-        </p>
-
-        <form onSubmit={handleSubmit} noValidate className="mt-6 flex flex-col gap-4">
+        <form onSubmit={handleSubmit} noValidate className="mt-5 flex flex-col gap-4">
           <div>
             <label
               htmlFor="email"
