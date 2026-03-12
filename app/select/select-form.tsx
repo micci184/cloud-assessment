@@ -322,7 +322,7 @@ export const SelectForm = () => {
             disabled={isSubmitting}
             className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
           >
-            {isSubmitting ? "作成中..." : "推奨設定で開始する"}
+            {isSubmitting ? "作成中..." : "テストを開始"}
           </button>
         </section>
       </div>
