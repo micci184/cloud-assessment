@@ -514,26 +514,18 @@ export const MeDashboard = () => {
     {
       label: "全体平均点",
       value: `${stats?.averagePercent ?? 0}%`,
-      icon: "📊",
-      tone: "emerald" as const,
     },
     {
       label: "受験回数",
       value: `${stats?.totalAttempts ?? 0}回`,
-      icon: "🔄",
-      tone: "blue" as const,
     },
     {
       label: "直近10回平均点",
       value: `${stats?.recentAveragePercent ?? 0}%`,
-      icon: "📈",
-      tone: "violet" as const,
     },
     {
       label: "直近7日回答数",
       value: `${stats?.recent7DaysAnswered ?? 0}問`,
-      icon: "🗓️",
-      tone: "amber" as const,
     },
   ];
 
@@ -639,8 +631,6 @@ export const MeDashboard = () => {
                   key={card.label}
                   label={card.label}
                   value={card.value}
-                  icon={card.icon}
-                  tone={card.tone}
                 />
               ))}
             </div>

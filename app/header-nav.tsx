@@ -17,7 +17,7 @@ export const HeaderNav = (): React.ReactElement => {
   const getNavLinkClassName = (isActive: boolean): string => {
     return `whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
       isActive
-        ? "border-brand-300 bg-brand-300 text-neutral-900 dark:border-brand-400 dark:bg-brand-400 dark:text-white"
+        ? "border-neutral-300 bg-neutral-100 text-neutral-900 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100"
         : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
     }`;
   };
