@@ -505,11 +505,6 @@ export const QuizRunner = ({ attemptId }: Props) => {
                     {String.fromCharCode(65 + index)}.
                   </span>
                   {choice}
-                  {isSelected && (
-                    <span className="ml-2 text-xs font-medium text-brand-700 dark:text-brand-300">
-                      選択中
-                    </span>
-                  )}
                 </button>
               );
             })}
