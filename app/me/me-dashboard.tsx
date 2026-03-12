@@ -510,10 +510,41 @@ export const MeDashboard = () => {
   const profileInitial =
     profile?.email.trim().charAt(0).toUpperCase() || "?";
   const profileName = profile?.email.split("@")[0] ?? "学習者";
+  const summaryCards = [
+    {
+      label: "全体平均点",
+      value: `${stats?.averagePercent ?? 0}%`,
+      icon: "📊",
+      tone: "emerald" as const,
+    },
+    {
+      label: "受験回数",
+      value: `${stats?.totalAttempts ?? 0}回`,
+      icon: "🔄",
+      tone: "blue" as const,
+    },
+    {
+      label: "直近10回平均点",
+      value: `${stats?.recentAveragePercent ?? 0}%`,
+      icon: "📈",
+      tone: "violet" as const,
+    },
+    {
+      label: "直近7日回答数",
+      value: `${stats?.recent7DaysAnswered ?? 0}問`,
+      icon: "🗓️",
+      tone: "amber" as const,
+    },
+  ];
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6">
-      <h1 className="text-2xl font-semibold">マイページ</h1>
+    <div className="mx-auto w-full max-w-4xl space-y-8">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold sm:text-3xl">マイページ</h1>
+        <p className="text-sm text-neutral-600 dark:text-neutral-400">
+          学習状況の確認と、履歴の再開・詳細確認ができます。
+        </p>
+      </header>
 
       {error && (
         <p
@@ -527,7 +558,7 @@ export const MeDashboard = () => {
         </p>
       )}
 
-      <section className="w-fit rounded-full border border-black/10 bg-white p-1 dark:border-white/15 dark:bg-black/50">
+      <section className="w-fit rounded-full border border-black/10 bg-white p-1.5 shadow-sm dark:border-white/15 dark:bg-black/50">
         <div role="tablist" aria-label="マイページ表示切り替え" className="flex gap-1">
           {tabs.map((tab, index) => (
             <button
@@ -560,10 +591,10 @@ export const MeDashboard = () => {
           id="me-panel-summary"
           role="tabpanel"
           aria-labelledby="me-tab-summary"
-          className="space-y-6"
+          className="space-y-8"
         >
-          <section className="grid grid-cols-1 gap-4">
-            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <section className="space-y-5">
+            <article className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50">
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-200 text-xl font-semibold text-brand-600 dark:bg-brand-400/25 dark:text-brand-200">
@@ -595,18 +626,28 @@ export const MeDashboard = () => {
                 </button>
               </div>
             </article>
-            <ActivityHeatmap items={stats.activityHeatmap} />
+            <div>
+              <ActivityHeatmap items={stats.activityHeatmap} />
+            </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <SummaryCard label="全体平均点" value={`${stats.averagePercent}%`} />
-            <SummaryCard label="受験回数" value={`${stats.totalAttempts}回`} />
-            <SummaryCard label="直近10回平均点" value={`${stats.recentAveragePercent}%`} />
-            <SummaryCard label="直近7日回答数" value={`${stats.recent7DaysAnswered}問`} />
+          <section className="space-y-3">
+            <h2 className="text-lg font-semibold">学習サマリー</h2>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {summaryCards.map((card) => (
+                <SummaryCard
+                  key={card.label}
+                  label={card.label}
+                  value={card.value}
+                  icon={card.icon}
+                  tone={card.tone}
+                />
+              ))}
+            </div>
           </section>
 
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-            <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <article className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50">
               <h2 className="mb-1 text-lg font-semibold">前回の続き</h2>
               <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
                 直近の学習状態から再開できます
@@ -644,7 +685,7 @@ export const MeDashboard = () => {
             </article>
 
             {latestCompleted && latestCompleted.result ? (
-              <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+              <article className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50">
                 <h2 className="mb-1 text-lg font-semibold">直近の結果</h2>
                 <p className="mb-4 text-sm text-neutral-600 dark:text-neutral-400">
                   {formatDate(latestCompleted.completedAt)}
@@ -667,7 +708,7 @@ export const MeDashboard = () => {
                 </button>
               </article>
             ) : (
-              <article className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+              <article className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50">
                 <h2 className="mb-1 text-lg font-semibold">直近の結果</h2>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   まだ採点済みの受験がありません。
@@ -681,8 +722,13 @@ export const MeDashboard = () => {
       {/* 履歴一覧 */}
       {activeTab === "history" && (
       <div id="me-panel-history" role="tabpanel" aria-labelledby="me-tab-history" className="space-y-6">
-      <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-        <h2 className="mb-4 text-lg font-semibold">受験履歴</h2>
+      <section className="rounded-2xl border border-black/10 bg-white p-6 shadow-sm dark:border-white/15 dark:bg-black/50">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold">受験履歴</h2>
+          <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
+            過去の受験結果の確認、エクスポート、Notion連携ができます。
+          </p>
+        </div>
 
         {attempts.length === 0 ? (
           <div className="text-center">
@@ -698,7 +744,7 @@ export const MeDashboard = () => {
             </button>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-3">
             {attempts.map((attempt) => {
               const filters = attempt.filters as AttemptFilters;
               const deliveryState = deliveryStateMap[attempt.id];
@@ -710,10 +756,10 @@ export const MeDashboard = () => {
               return (
                 <div
                   key={attempt.id}
-                  className={`w-full rounded-lg border px-4 py-3 text-left ${
+                  className={`w-full rounded-xl border px-4 py-3 text-left transition ${
                     selectedAttempt?.id === attempt.id
                       ? "border-brand-400 bg-brand-200/40 dark:border-brand-300 dark:bg-brand-400/10"
-                      : "border-neutral-200 dark:border-neutral-700"
+                      : "border-neutral-200 hover:border-neutral-300 hover:bg-neutral-50/60 dark:border-neutral-700 dark:hover:border-neutral-600 dark:hover:bg-neutral-900/20"
                   }`}
                 >
                   <button
@@ -769,7 +815,7 @@ export const MeDashboard = () => {
                   </div>
                   </button>
                   <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50/80 p-1.5 dark:border-neutral-700 dark:bg-neutral-900/30">
                       {attempt.status === "IN_PROGRESS" && (
                         <button
                           type="button"
