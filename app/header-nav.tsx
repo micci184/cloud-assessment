@@ -15,10 +15,10 @@ export const HeaderNav = (): React.ReactElement => {
   const isMyPage = pathname === "/me";
 
   const getNavLinkClassName = (isActive: boolean): string => {
-    return `whitespace-nowrap rounded-full px-2 py-1.5 text-xs transition sm:px-3 sm:text-sm ${
+    return `whitespace-nowrap rounded-full border px-3 py-1.5 text-xs font-medium transition sm:text-sm ${
       isActive
-        ? "bg-brand-300 text-neutral-900 dark:bg-brand-400 dark:text-white"
-        : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        ? "border-brand-300 bg-brand-300 text-neutral-900 dark:border-brand-400 dark:bg-brand-400 dark:text-white"
+        : "border-transparent text-neutral-600 hover:border-neutral-200 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800"
     }`;
   };
 
@@ -67,22 +67,22 @@ export const HeaderNav = (): React.ReactElement => {
             void handleLogout();
           }}
           disabled={isLoggingOut}
-          className="whitespace-nowrap rounded-full px-2 py-1.5 text-xs text-neutral-600 transition hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:bg-neutral-800 sm:px-3 sm:text-sm"
+          className="whitespace-nowrap rounded-full border border-transparent px-3 py-1.5 text-xs font-medium text-neutral-600 transition hover:border-neutral-200 hover:bg-neutral-100 disabled:opacity-60 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 sm:text-sm"
         >
-          {isLoggingOut ? "Logout..." : "Logout"}
+          {isLoggingOut ? "ログアウト中..." : "ログアウト"}
         </button>
       ) : (
         <Link href="/login" className={getNavLinkClassName(isLoginPage)}>
-          Login
+          ログイン
         </Link>
       )}
       {!isLoginPage && (
         <>
           <Link href="/select" className={getNavLinkClassName(isSelectPage)}>
-            Select
+            問題選択
           </Link>
           <Link href="/me" className={getNavLinkClassName(isMyPage)}>
-            My page
+            マイページ
           </Link>
         </>
       )}
