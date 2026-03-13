@@ -85,6 +85,10 @@ export const POST = async (
       return messageResponse("この試験は既に完了しています", 400);
     }
 
+    if (attempt.status === "CANCELLED") {
+      return messageResponse("この試験は中止済みです", 400);
+    }
+
     const body: unknown = await request.json();
     const parsed = answerSchema.safeParse(body);
 

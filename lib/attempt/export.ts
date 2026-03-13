@@ -25,7 +25,7 @@ type ExportQuestionItem = {
 
 export type AttemptExportPayload = {
   attemptId: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   startedAt: string;
   completedAt: string | null;
   filters: AttemptFilters;
@@ -38,7 +38,7 @@ export type AttemptExportPayload = {
 
 type CreatePayloadInput = {
   attemptId: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   startedAt: Date;
   completedAt: Date | null;
   filters: AttemptFilters;

@@ -71,7 +71,7 @@ const findLatestNotionDeliveryJob = async (
 const buildDeliveryInput = (
   attempt: {
     id: string;
-    status: "IN_PROGRESS" | "COMPLETED";
+    status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
     questions: Array<{
       selectedIndices: unknown;
       isCorrect: boolean | null;
