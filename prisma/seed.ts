@@ -17,6 +17,8 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 type SeedQuestion = {
+  platform: string;
+  exam: string;
   category: string;
   level: number;
   questionText: string;
@@ -27,6 +29,8 @@ type SeedQuestion = {
 
 const seedQuestions: SeedQuestion[] = [
   {
+    platform: "AWS",
+    exam: "CP",
     category: "VPC",
     level: 1,
     questionText: "VPCの主な役割として最も適切なものはどれですか？",
@@ -41,6 +45,8 @@ const seedQuestions: SeedQuestion[] = [
       "VPCはAWS上でIPレンジやサブネットを設計できる仮想ネットワークです。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "VPC",
     level: 2,
     questionText:
@@ -55,6 +61,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "外部公開しないEC2はプライベートサブネットに配置します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "VPC",
     level: 3,
     questionText: "NATゲートウェイの主な用途は何ですか？",
@@ -69,6 +77,8 @@ const seedQuestions: SeedQuestion[] = [
       "NATゲートウェイはプライベートサブネット内リソースのアウトバウンド通信を提供します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "EC2",
     level: 1,
     questionText: "EC2とは何を提供するサービスですか？",
@@ -82,6 +92,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "EC2はElastic Compute Cloudであり、仮想サーバーを提供します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "EC2",
     level: 2,
     questionText:
@@ -97,6 +109,8 @@ const seedQuestions: SeedQuestion[] = [
       "セキュリティグループはインスタンスに関連付くステートフルな仮想ファイアウォールです。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "EC2",
     level: 3,
     questionText: "Auto Scalingの目的として最も適切なものはどれですか？",
@@ -111,6 +125,8 @@ const seedQuestions: SeedQuestion[] = [
       "Auto Scalingは負荷に応じてインスタンス数を自動増減し可用性とコスト最適化を支援します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "S3",
     level: 1,
     questionText: "S3で保存されるデータ単位は何ですか？",
@@ -120,6 +136,8 @@ const seedQuestions: SeedQuestion[] = [
       "S3はオブジェクトストレージであり、データはオブジェクトとして保存されます。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "S3",
     level: 2,
     questionText:
@@ -134,6 +152,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "パブリックアクセスブロックにより意図しない公開を防げます。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "S3",
     level: 3,
     questionText: "S3のライフサイクルポリシーで実現できることはどれですか？",
@@ -148,6 +168,8 @@ const seedQuestions: SeedQuestion[] = [
       "ライフサイクルは保存期間に応じてストレージクラス移行や削除を自動化できます。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "IAM",
     level: 1,
     questionText: "IAMの主な目的は何ですか？",
@@ -156,6 +178,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "IAMはAWSリソースへの認証・認可を制御します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "IAM",
     level: 2,
     questionText: "最小権限の原則として適切な考え方はどれですか？",
@@ -169,6 +193,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "最小権限は業務に必要な最小限の権限だけを与える原則です。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "IAM",
     level: 3,
     questionText: "EC2からS3へ安全にアクセスさせる一般的な方法はどれですか？",
@@ -183,6 +209,8 @@ const seedQuestions: SeedQuestion[] = [
       "EC2にはIAMロールを付与し、一時的認証情報でアクセスさせるのが推奨です。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudWatch",
     level: 1,
     questionText: "CloudWatch Metricsで主に扱うものはどれですか？",
@@ -192,6 +220,8 @@ const seedQuestions: SeedQuestion[] = [
       "CloudWatch MetricsはCPU使用率などの時系列数値データを扱います。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudWatch",
     level: 2,
     questionText:
@@ -207,6 +237,8 @@ const seedQuestions: SeedQuestion[] = [
       "CloudWatch Alarmでメトリクスしきい値を監視し、SNS通知などに連携できます。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudWatch",
     level: 3,
     questionText:
@@ -221,6 +253,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "CloudWatch Logsはログの収集・検索・保持管理に利用します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudTrail",
     level: 1,
     questionText: "CloudTrailの主な用途はどれですか？",
@@ -234,6 +268,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "CloudTrailはAWS APIコール履歴を監査目的で記録します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudTrail",
     level: 2,
     questionText:
@@ -248,6 +284,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "誰がいつ何を実行したかの追跡はCloudTrailが基本です。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "CloudTrail",
     level: 3,
     questionText:
@@ -263,6 +301,8 @@ const seedQuestions: SeedQuestion[] = [
       "ログファイル整合性検証により、ログ改ざんの検知が可能になります。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "RDS",
     level: 1,
     questionText: "RDSの説明として正しいものはどれですか？",
@@ -276,6 +316,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "RDSはMySQL/PostgreSQL等をマネージドで提供するサービスです。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "RDS",
     level: 2,
     questionText: "RDS Multi-AZの主な目的はどれですか？",
@@ -290,6 +332,8 @@ const seedQuestions: SeedQuestion[] = [
       "Multi-AZはスタンバイレプリカを用いて障害時の可用性を高めます。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "RDS",
     level: 3,
     questionText:
@@ -305,6 +349,8 @@ const seedQuestions: SeedQuestion[] = [
       "RDSの自動バックアップ設定でポイントインタイムリカバリが可能になります。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "Lambda",
     level: 1,
     questionText: "Lambdaの特徴として正しいものはどれですか？",
@@ -318,6 +364,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "Lambdaはサーバーレスでイベントに応じて関数を実行します。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "Lambda",
     level: 2,
     questionText:
@@ -332,6 +380,8 @@ const seedQuestions: SeedQuestion[] = [
     explanation: "S3イベント通知はLambda連携の代表的なトリガーです。",
   },
   {
+    platform: "AWS",
+    exam: "CP",
     category: "Lambda",
     level: 3,
     questionText:
@@ -356,6 +406,8 @@ const main = async (): Promise<void> => {
 
   await prisma.question.createMany({
     data: seedQuestions.map((question) => ({
+      platform: question.platform,
+      exam: question.exam,
       category: question.category,
       level: question.level,
       questionType: "SINGLE",

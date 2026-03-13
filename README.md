@@ -40,7 +40,7 @@ docker-compose up -d
 # 5. マイグレーション実行
 npm run db:migrate
 
-# 6. Seedデータを投入（AWS 8カテゴリ × 3レベル = 24問）
+# 6. Seedデータを投入（AWS / CP: 8カテゴリ × 3レベル = 24問）
 npm run db:seed
 
 # 7. 開発サーバーを起動
@@ -68,8 +68,10 @@ npm run import:questions -- ./path/to/questions.csv
 
 | カラム名 | 型/形式 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `category` | 文字列 | Yes | 問題カテゴリ（例: `S3`, `IAM`） |
+| `platform` | 文字列 | Yes | 技術基盤（例: `AWS`, `LinuC`） |
+| `category` | 文字列 | Yes | 問題カテゴリ（例: `S3`, `IAM`, `kernel`） |
 | `level` | 数値（`1`〜`3`） | Yes | 難易度 |
+| `exam` | 文字列 | Yes | 対応試験（例: `CP`, `SAA`, `LinuC-1`） |
 | `questionText` | 文字列 | Yes | 問題文 |
 | `choice1` | 文字列 | Yes | 選択肢1 |
 | `choice2` | 文字列 | Yes | 選択肢2 |
@@ -81,9 +83,28 @@ npm run import:questions -- ./path/to/questions.csv
 補足:
 
 - 既定CSVは `data/questions.csv` です。
-- 同一CSV内で `category + level + questionText` が重複している行はエラーになります。
-- DB上の同一キー（`category + level + questionText`）は更新、未存在は新規作成されます。
+- 同一CSV内で `platform + exam + category + level + questionText` が重複している行はエラーになります。
+- DB上の同一キー（`platform + exam + category + level + questionText`）は更新、未存在は新規作成されます。
 - 必須欠落や `answerIndex` 範囲外などの不正行は、行番号付きでエラー表示されます。
+
+### level 定義
+
+| level | 意味 | AWS試験との対応感 |
+| --- | --- | --- |
+| `1` | 単一サービスの基礎概念・定義 | Cloud Practitioner 中心 |
+| `2` | 設定・動作・他サービスとの組み合わせ理解 | CP〜SAA |
+| `3` | 設計・トレードオフ・応用・障害対応 | SAA 中心 |
+
+### platform / exam 定義
+
+- `platform`
+  - `AWS`: Amazon Web Services 関連
+  - `LinuC`: Linux技術者認定試験 関連
+- `exam`
+  - `CP`: AWS Certified Cloud Practitioner
+  - `SAA`: AWS Certified Solutions Architect - Associate
+  - `LinuC-1`: LinuC レベル1
+  - `LinuC-2`: LinuC レベル2
 
 ## 動作確認手順
 

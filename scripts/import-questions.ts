@@ -20,6 +20,8 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const csvRowSchema = z.object({
+  platform: z.string().trim().min(1, "platform is required"),
+  exam: z.string().trim().min(1, "exam is required"),
   category: z.string().trim().min(1, "category is required"),
   level: z.coerce.number().int().min(1).max(3),
   questionText: z.string().trim().min(1, "questionText is required"),
@@ -77,7 +79,7 @@ const parseCsv = async (csvPath: string): Promise<QuestionImportRow[]> => {
 
   const duplicateKeySet = new Set<string>();
   validatedRows.forEach((row, index) => {
-    const key = `${row.category}::${row.level}::${row.questionText}`;
+    const key = `${row.platform}::${row.exam}::${row.category}::${row.level}::${row.questionText}`;
     if (duplicateKeySet.has(key)) {
       throw new Error(
         `CSV has duplicate question key at row ${index + 2}: ${key}`,
@@ -100,6 +102,8 @@ const main = async (): Promise<void> => {
     for (const row of rows) {
       const choices: string[] = [row.choice1, row.choice2, row.choice3, row.choice4];
       const where = {
+        platform: row.platform,
+        exam: row.exam,
         category: row.category,
         level: row.level,
         questionText: row.questionText,
