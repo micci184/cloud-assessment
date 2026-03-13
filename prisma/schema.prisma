@@ -38,6 +38,8 @@ model User {
 
 model Question {
   id               String            @id @default(cuid())
+  platform         String            @default("AWS")
+  exam             String            @default("CP")
   category         String
   level            Int
   questionType     QuestionType      @default(SINGLE)
@@ -49,7 +51,7 @@ model Question {
   updatedAt        DateTime          @updatedAt
   attemptQuestions AttemptQuestion[]
 
-  @@index([category, level])
+  @@index([platform, exam, category, level])
 }
 
 model Attempt {
