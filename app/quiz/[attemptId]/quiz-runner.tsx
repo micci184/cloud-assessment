@@ -32,7 +32,7 @@ type ResultData = {
 
 type AttemptData = {
   id: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   questions: QuestionData[];
   result: ResultData | null;
 };
@@ -42,6 +42,7 @@ type Props = {
 };
 
 export const QuizRunner = ({ attemptId }: Props) => {
+  const router = useRouter();
   const [attempt, setAttempt] = useState<AttemptData | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [draftSelectedChoices, setDraftSelectedChoices] = useState<number[]>([]);
@@ -391,6 +392,33 @@ export const QuizRunner = ({ attemptId }: Props) => {
 
   if (attempt.status === "COMPLETED" && attempt.result) {
     return <ResultView attempt={attempt} />;
+  }
+
+  if (attempt.status === "CANCELLED") {
+    return (
+      <section className="mx-auto w-full max-w-2xl rounded-2xl border border-black/10 bg-white p-8 dark:border-white/15 dark:bg-black/50">
+        <h2 className="text-xl font-semibold">この受験は中止されています</h2>
+        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+          中止済みの受験は再開できません。新しいテストを開始してください。
+        </p>
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/select")}
+            className="rounded-lg bg-brand-300 px-6 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+          >
+            新しいテストを始める
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/me")}
+            className="rounded-lg border border-neutral-300 px-6 py-2.5 text-sm font-medium transition hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500"
+          >
+            マイページへ戻る
+          </button>
+        </div>
+      </section>
+    );
   }
 
   const allAnswered = attempt.questions.every((q) => isQuestionAnswered(q));

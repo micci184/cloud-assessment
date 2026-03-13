@@ -10,7 +10,7 @@ export type AttemptFilters = {
 
 export type AttemptSummary = {
   id: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   filters: AttemptFilters;
   startedAt: string;
   completedAt: string | null;

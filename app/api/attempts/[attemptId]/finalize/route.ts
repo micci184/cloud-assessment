@@ -73,6 +73,10 @@ export const POST = async (
       return messageResponse("この試験は既に採点済みです", 400);
     }
 
+    if (attempt.status === "CANCELLED") {
+      return messageResponse("この試験は中止済みのため採点できません", 400);
+    }
+
     const unanswered = attempt.questions.filter((aq) => {
       const choiceCount = parseQuestionChoices(aq.question.choices).length;
       if (choiceCount === 0) {

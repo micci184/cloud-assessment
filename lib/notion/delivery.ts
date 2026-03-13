@@ -1,6 +1,6 @@
 type NotionDeliveryInput = {
   attemptId: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   questions: Array<{
     category: string;
     level: number;

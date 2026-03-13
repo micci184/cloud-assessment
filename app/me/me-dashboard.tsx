@@ -45,6 +45,7 @@ export const MeDashboard = () => {
     Record<string, NotionDeliveryState>
   >({});
   const [exportStateMap, setExportStateMap] = useState<Record<string, ExportState>>({});
+  const [cancelingAttemptId, setCancelingAttemptId] = useState<string | null>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
   const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -431,6 +432,32 @@ export const MeDashboard = () => {
     }
   };
 
+  const handleCancelAttempt = async (attemptId: string): Promise<void> => {
+    setCancelingAttemptId(attemptId);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/attempts/${attemptId}/cancel`, {
+        method: "POST",
+      });
+      const data = (await response.json()) as { message?: string };
+      if (!response.ok) {
+        setError(data.message ?? "受験の中止に失敗しました");
+        return;
+      }
+
+      if (selectedAttempt?.id === attemptId) {
+        setSelectedAttempt(null);
+      }
+
+      await handleAttemptsPageChange(attemptsPage);
+    } catch {
+      setError("通信に失敗しました");
+    } finally {
+      setCancelingAttemptId(null);
+    }
+  };
+
   const tabs: Array<{ key: MeTabKey; label: string }> = [
     { key: "summary", label: "学習サマリー" },
     { key: "history", label: "学習履歴" },
@@ -742,6 +769,7 @@ export const MeDashboard = () => {
               const canDeliver = attempt.status === "COMPLETED";
               const canExport = attempt.status === "COMPLETED";
               const isExporting = exportState?.isExporting === true;
+              const isCanceling = cancelingAttemptId === attempt.id;
 
               return (
                 <div
@@ -763,10 +791,16 @@ export const MeDashboard = () => {
                         className={`rounded px-1.5 py-0.5 text-xs font-medium ${
                           attempt.status === "COMPLETED"
                             ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                            : attempt.status === "CANCELLED"
+                              ? "bg-neutral-200 text-neutral-700 dark:bg-neutral-700 dark:text-neutral-300"
+                              : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
                         }`}
                       >
-                        {attempt.status === "COMPLETED" ? "完了" : "進行中"}
+                        {attempt.status === "COMPLETED"
+                          ? "完了"
+                          : attempt.status === "CANCELLED"
+                            ? "中止"
+                            : "進行中"}
                       </span>
                       <span className="text-sm text-neutral-600 dark:text-neutral-400">
                         {formatDate(attempt.startedAt)}
@@ -814,6 +848,19 @@ export const MeDashboard = () => {
                           className="rounded-lg bg-brand-300 px-3 py-1.5 text-xs font-medium text-neutral-900 transition hover:bg-brand-400 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
                         >
                           再開
+                        </button>
+                      )}
+                      {attempt.status === "IN_PROGRESS" && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            void handleCancelAttempt(attempt.id);
+                          }}
+                          disabled={isCanceling}
+                          aria-label={`進行中の受験 ${attempt.id} を中止`}
+                          className="rounded-lg border border-neutral-300 px-3 py-1.5 text-xs font-medium transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
+                        >
+                          {isCanceling ? "中止中..." : "中止"}
                         </button>
                       )}
                       <button

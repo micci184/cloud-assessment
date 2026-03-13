@@ -11,7 +11,7 @@ import { parseCategoryBreakdown } from "@/lib/quiz/parsers";
 
 type AttemptSummarySource = {
   id: string;
-  status: "IN_PROGRESS" | "COMPLETED";
+  status: "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
   filters: unknown;
   startedAt: Date;
   completedAt: Date | null;
