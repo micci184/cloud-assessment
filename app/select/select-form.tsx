@@ -169,7 +169,7 @@ export const SelectForm = () => {
 
   if (isLoading) {
     return (
-      <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
         <p
           role="status"
           aria-live="polite"
@@ -226,7 +226,7 @@ export const SelectForm = () => {
       )}
 
       <div className="space-y-4">
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+        <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
           <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             カスタム学習
           </p>
@@ -251,7 +251,7 @@ export const SelectForm = () => {
                       setError("");
                     }}
                     aria-pressed={selectedPlatform === platform}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                    className={`min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium transition sm:min-h-0 sm:py-2 ${
                       selectedPlatform === platform
                         ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                         : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
@@ -294,7 +294,7 @@ export const SelectForm = () => {
                       onClick={() => toggleCategory(cat.category)}
                       aria-pressed={isSelected}
                       aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                      className={`min-h-[44px] rounded-lg border px-3 py-2.5 text-sm transition sm:min-h-0 sm:py-1.5 ${
                         isSelected
                           ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                           : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
@@ -353,7 +353,7 @@ export const SelectForm = () => {
                       }
                       aria-pressed={isSelected}
                       aria-label={`レベル ${l}${isSelected ? "（選択中）" : ""}`}
-                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                      className={`min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium transition sm:min-h-0 sm:py-2 ${
                         isSelected
                           ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                           : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
@@ -389,14 +389,14 @@ export const SelectForm = () => {
             <button
               type="submit"
               disabled={isSubmitting || selectedCategories.length === 0 || selectedLevels.length === 0}
-              className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+              className="min-h-[44px] rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               {isSubmitting ? "作成中..." : "テストを開始"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+        <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
           <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             資格対策
           </p>
@@ -410,7 +410,7 @@ export const SelectForm = () => {
               void handleStartCloudPractitioner();
             }}
             disabled={isSubmitting}
-            className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+            className="mt-5 min-h-[44px] w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
           >
             {isSubmitting ? "作成中..." : "テストを開始"}
           </button>
