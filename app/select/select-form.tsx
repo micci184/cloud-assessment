@@ -27,7 +27,6 @@ export const SelectForm = () => {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
-  const [selectedExam, setSelectedExam] = useState<string>("");
   const [level, setLevel] = useState<number>(1);
   const [count, setCount] = useState<number>(5);
   const [error, setError] = useState("");
@@ -51,7 +50,6 @@ export const SelectForm = () => {
           const firstCategory = data.categories[0];
           if (firstCategory) {
             setSelectedPlatform(firstCategory.platform);
-            setSelectedExam(firstCategory.exam);
           }
         }
       } catch {
@@ -143,7 +141,6 @@ export const SelectForm = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           platform: selectedPlatform,
-          exam: selectedExam,
           categories: selectedCategories,
           level,
           count,
@@ -180,16 +177,24 @@ export const SelectForm = () => {
   }
 
   const platforms = Array.from(new Set(categories.map((cat) => cat.platform)));
-  const exams = Array.from(
-    new Set(
-      categories
-        .filter((cat) => cat.platform === selectedPlatform)
-        .map((cat) => cat.exam),
-    ),
-  );
-  const filteredCategories = categories.filter(
-    (cat) => cat.platform === selectedPlatform && cat.exam === selectedExam,
-  );
+  const filteredCategories = (() => {
+    const byPlatform = categories.filter((cat) => cat.platform === selectedPlatform);
+    const merged = new Map<string, CategoryInfo>();
+    for (const cat of byPlatform) {
+      const existing = merged.get(cat.category);
+      if (existing) {
+        const allLevels = new Set([...existing.levels, ...cat.levels]);
+        merged.set(cat.category, {
+          ...existing,
+          levels: Array.from(allLevels).sort((a, b) => a - b),
+          count: existing.count + cat.count,
+        });
+      } else {
+        merged.set(cat.category, { ...cat });
+      }
+    }
+    return Array.from(merged.values());
+  })();
   const isAllSelected =
     filteredCategories.length > 0 &&
     selectedCategories.length === filteredCategories.length;
@@ -237,12 +242,6 @@ export const SelectForm = () => {
                     type="button"
                     onClick={() => {
                       setSelectedPlatform(platform);
-                      const nextExam = categories.find(
-                        (cat) => cat.platform === platform,
-                      )?.exam;
-                      if (nextExam) {
-                        setSelectedExam(nextExam);
-                      }
                       setSelectedCategories([]);
                       setError("");
                     }}
@@ -255,34 +254,6 @@ export const SelectForm = () => {
                     disabled={isSubmitting}
                   >
                     {platform}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                試験
-              </label>
-              <div role="group" aria-label="試験選択" className="flex flex-wrap gap-2">
-                {exams.map((exam) => (
-                  <button
-                    key={exam}
-                    type="button"
-                    onClick={() => {
-                      setSelectedExam(exam);
-                      setSelectedCategories([]);
-                      setError("");
-                    }}
-                    aria-pressed={selectedExam === exam}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                      selectedExam === exam
-                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    {exam}
                   </button>
                 ))}
               </div>
