@@ -12,19 +12,39 @@ export const GET = async (request: Request): Promise<NextResponse> => {
       return messageResponse("unauthorized", 401);
     }
 
+    const url = new URL(request.url);
+    const platform = url.searchParams.get("platform")?.trim() || undefined;
+    const exam = url.searchParams.get("exam")?.trim() || undefined;
+
     const rows = await prisma.question.groupBy({
-      by: ["category", "level"],
+      by: ["platform", "exam", "category", "level"],
+      where: {
+        ...(platform ? { platform } : {}),
+        ...(exam ? { exam } : {}),
+      },
       _count: { id: true },
-      orderBy: [{ category: "asc" }, { level: "asc" }],
+      orderBy: [
+        { platform: "asc" },
+        { exam: "asc" },
+        { category: "asc" },
+        { level: "asc" },
+      ],
     });
 
     const categoryMap = new Map<
       string,
-      { category: string; levels: number[]; count: number }
+      {
+        platform: string;
+        exam: string;
+        category: string;
+        levels: number[];
+        count: number;
+      }
     >();
 
     for (const row of rows) {
-      const existing = categoryMap.get(row.category);
+      const key = `${row.platform}::${row.exam}::${row.category}`;
+      const existing = categoryMap.get(key);
 
       if (existing) {
         if (!existing.levels.includes(row.level)) {
@@ -32,7 +52,9 @@ export const GET = async (request: Request): Promise<NextResponse> => {
         }
         existing.count += row._count.id;
       } else {
-        categoryMap.set(row.category, {
+        categoryMap.set(key, {
+          platform: row.platform,
+          exam: row.exam,
           category: row.category,
           levels: [row.level],
           count: row._count.id,
