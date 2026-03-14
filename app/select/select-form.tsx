@@ -39,7 +39,7 @@ export const SelectForm = () => {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
-  const [selectedLevels, setSelectedLevels] = useState<number[]>([1, 2, 3]);
+  const [selectedLevels, setSelectedLevels] = useState<number[]>([1]);
   const [count, setCount] = useState<number>(5);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
