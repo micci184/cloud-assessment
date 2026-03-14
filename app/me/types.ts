@@ -1,6 +1,8 @@
 import type { CategoryScore } from "@/lib/quiz/types";
 
 export type AttemptFilters = {
+  platform?: string;
+  exam?: string;
   categories?: string[];
   level?: number;
   levels?: number[];

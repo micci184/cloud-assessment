@@ -13,6 +13,8 @@ export const attemptParamsSchema = z.object({
 });
 
 export const createAttemptSchema = z.object({
+  platform: z.string().trim().min(1).max(100, "platform が長すぎます").optional(),
+  exam: z.string().trim().min(1).max(100, "exam が長すぎます").optional(),
   categories: z
     .array(z.string().min(1).max(200, "カテゴリ名が長すぎます"))
     .min(1, "カテゴリを1つ以上選択してください")

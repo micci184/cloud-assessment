@@ -61,10 +61,22 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       );
     }
 
-    const { categories, level, levels, count, preset } = parsed.data;
+    const {
+      categories,
+      level,
+      levels,
+      count,
+      preset,
+      platform: requestedPlatform,
+      exam: requestedExam,
+    } = parsed.data;
+    const platform = preset === "cloud-practitioner" ? "AWS" : requestedPlatform;
+    const exam = preset === "cloud-practitioner" ? "CP" : requestedExam;
 
     const questions = await prisma.question.findMany({
       where: {
+        ...(platform ? { platform } : {}),
+        ...(exam ? { exam } : {}),
         category: { in: categories },
         level: level !== undefined ? level : { in: levels ?? [] },
       },
@@ -93,6 +105,8 @@ export const POST = async (request: Request): Promise<NextResponse> => {
             count,
             ...(level !== undefined ? { level } : {}),
             ...(levels !== undefined ? { levels } : {}),
+            ...(platform ? { platform } : {}),
+            ...(exam ? { exam } : {}),
             ...(preset ? { preset } : {}),
           },
         },
