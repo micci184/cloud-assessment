@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 type CategoryInfo = {
+  platform: string;
+  exam: string;
   category: string;
   levels: number[];
   count: number;
@@ -24,6 +26,8 @@ export const SelectForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedPlatform, setSelectedPlatform] = useState<string>("");
+  const [selectedExam, setSelectedExam] = useState<string>("");
   const [level, setLevel] = useState<number>(1);
   const [count, setCount] = useState<number>(5);
   const [error, setError] = useState("");
@@ -43,6 +47,13 @@ export const SelectForm = () => {
 
         const data = (await response.json()) as { categories: CategoryInfo[] };
         setCategories(data.categories);
+        if (data.categories.length > 0) {
+          const firstCategory = data.categories[0];
+          if (firstCategory) {
+            setSelectedPlatform(firstCategory.platform);
+            setSelectedExam(firstCategory.exam);
+          }
+        }
       } catch {
         setError("通信に失敗しました");
       } finally {
@@ -69,7 +80,7 @@ export const SelectForm = () => {
   };
 
   const selectAllCategories = (): void => {
-    setSelectedCategories(categories.map((c) => c.category));
+    setSelectedCategories(filteredCategories.map((c) => c.category));
     setError("");
   };
 
@@ -131,6 +142,8 @@ export const SelectForm = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          platform: selectedPlatform,
+          exam: selectedExam,
           categories: selectedCategories,
           level,
           count,
@@ -166,9 +179,20 @@ export const SelectForm = () => {
     );
   }
 
+  const platforms = Array.from(new Set(categories.map((cat) => cat.platform)));
+  const exams = Array.from(
+    new Set(
+      categories
+        .filter((cat) => cat.platform === selectedPlatform)
+        .map((cat) => cat.exam),
+    ),
+  );
+  const filteredCategories = categories.filter(
+    (cat) => cat.platform === selectedPlatform && cat.exam === selectedExam,
+  );
   const isAllSelected =
-    categories.length > 0 &&
-    selectedCategories.length === categories.length;
+    filteredCategories.length > 0 &&
+    selectedCategories.length === filteredCategories.length;
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-5">
@@ -203,6 +227,68 @@ export const SelectForm = () => {
 
           <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-6">
             <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                プラットフォーム
+              </label>
+              <div role="group" aria-label="プラットフォーム選択" className="flex flex-wrap gap-2">
+                {platforms.map((platform) => (
+                  <button
+                    key={platform}
+                    type="button"
+                    onClick={() => {
+                      setSelectedPlatform(platform);
+                      const nextExam = categories.find(
+                        (cat) => cat.platform === platform,
+                      )?.exam;
+                      if (nextExam) {
+                        setSelectedExam(nextExam);
+                      }
+                      setSelectedCategories([]);
+                      setError("");
+                    }}
+                    aria-pressed={selectedPlatform === platform}
+                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                      selectedPlatform === platform
+                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                    }`}
+                    disabled={isSubmitting}
+                  >
+                    {platform}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                試験
+              </label>
+              <div role="group" aria-label="試験選択" className="flex flex-wrap gap-2">
+                {exams.map((exam) => (
+                  <button
+                    key={exam}
+                    type="button"
+                    onClick={() => {
+                      setSelectedExam(exam);
+                      setSelectedCategories([]);
+                      setError("");
+                    }}
+                    aria-pressed={selectedExam === exam}
+                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                      selectedExam === exam
+                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                    }`}
+                    disabled={isSubmitting}
+                  >
+                    {exam}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
               <div className="mb-2 flex items-center justify-between">
                 <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
                   カテゴリ
@@ -222,7 +308,7 @@ export const SelectForm = () => {
                 </button>
               </div>
               <div role="group" aria-label="カテゴリ選択" className="flex flex-wrap gap-2">
-                {categories.map((cat) => {
+                {filteredCategories.map((cat) => {
                   const isSelected = selectedCategories.includes(cat.category);
 
                   return (
@@ -245,6 +331,11 @@ export const SelectForm = () => {
                   );
                 })}
               </div>
+              {filteredCategories.length === 0 && (
+                <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  条件に一致するカテゴリがありません。
+                </p>
+              )}
             </div>
 
             <div>

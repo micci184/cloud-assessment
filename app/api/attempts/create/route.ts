@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 
 import {
   requireAuthenticatedUser,
@@ -31,6 +32,55 @@ const buildChoiceOrder = (choicesCount: number): number[] => {
 
   const indexes = Array.from({ length: choicesCount }, (_, index) => index);
   return shuffleInPlace(indexes);
+};
+
+const findQuestionsForAttempt = async (input: {
+  categories: string[];
+  level?: number;
+  levels?: number[];
+  platform?: string;
+  exam?: string;
+}): Promise<Array<{ id: string; choices: unknown }>> => {
+  try {
+    return await prisma.question.findMany({
+      where: {
+        ...(input.platform ? { platform: input.platform } : {}),
+        ...(input.exam ? { exam: input.exam } : {}),
+        category: { in: input.categories },
+        level: input.level !== undefined ? input.level : { in: input.levels ?? [] },
+      },
+      select: {
+        id: true,
+        choices: true,
+      },
+    });
+  } catch (error) {
+    // Backward-compatible fallback for local DBs that have not applied Issue #152 migration yet.
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2022"
+    ) {
+      if (
+        (input.platform !== undefined && input.platform !== "AWS") ||
+        (input.exam !== undefined && input.exam !== "CP")
+      ) {
+        return [];
+      }
+
+      return prisma.question.findMany({
+        where: {
+          category: { in: input.categories },
+          level: input.level !== undefined ? input.level : { in: input.levels ?? [] },
+        },
+        select: {
+          id: true,
+          choices: true,
+        },
+      });
+    }
+
+    throw error;
+  }
 };
 
 export const POST = async (request: Request): Promise<NextResponse> => {
@@ -73,17 +123,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
     const platform = preset === "cloud-practitioner" ? "AWS" : requestedPlatform;
     const exam = preset === "cloud-practitioner" ? "CP" : requestedExam;
 
-    const questions = await prisma.question.findMany({
-      where: {
-        ...(platform ? { platform } : {}),
-        ...(exam ? { exam } : {}),
-        category: { in: categories },
-        level: level !== undefined ? level : { in: levels ?? [] },
-      },
-      select: {
-        id: true,
-        choices: true,
-      },
+    const questions = await findQuestionsForAttempt({
+      categories,
+      level,
+      levels,
+      platform,
+      exam,
     });
 
     if (questions.length < count) {
