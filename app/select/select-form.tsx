@@ -11,24 +11,35 @@ type CategoryInfo = {
   count: number;
 };
 
-const CLOUD_PRACTITIONER_CATEGORIES = [
-  "VPC",
-  "EC2",
-  "S3",
-  "IAM",
-  "CloudWatch",
-  "CloudTrail",
-  "RDS",
-  "Lambda",
-] as const;
+type CertificationPreset = {
+  id: string;
+  preset: string;
+  title: string;
+  description: string;
+  categories: readonly string[];
+  levels: number[];
+  count: number;
+};
+
+const CERTIFICATION_PRESETS: CertificationPreset[] = [
+  {
+    id: "cloud-practitioner",
+    preset: "cloud-practitioner",
+    title: "Cloud Practitioner",
+    description:
+      "AWS Certified Cloud Practitioner 想定の出題範囲で、30問のテストを開始します。",
+    categories: ["VPC", "EC2", "S3", "IAM", "CloudWatch", "CloudTrail", "RDS", "Lambda"],
+    levels: [1, 2, 3],
+    count: 30,
+  },
+];
 
 export const SelectForm = () => {
   const router = useRouter();
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
-  const [selectedExam, setSelectedExam] = useState<string>("");
-  const [level, setLevel] = useState<number>(1);
+  const [selectedLevels, setSelectedLevels] = useState<number[]>([1]);
   const [count, setCount] = useState<number>(5);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +62,6 @@ export const SelectForm = () => {
           const firstCategory = data.categories[0];
           if (firstCategory) {
             setSelectedPlatform(firstCategory.platform);
-            setSelectedExam(firstCategory.exam);
           }
         }
       } catch {
@@ -88,7 +98,7 @@ export const SelectForm = () => {
     setSelectedCategories([]);
   };
 
-  const handleStartCloudPractitioner = async (): Promise<void> => {
+  const handleStartPreset = async (preset: CertificationPreset): Promise<void> => {
     setError("");
     setIsSubmitting(true);
 
@@ -97,10 +107,10 @@ export const SelectForm = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preset: "cloud-practitioner",
-          categories: CLOUD_PRACTITIONER_CATEGORIES,
-          levels: [1, 2, 3],
-          count: 30,
+          preset: preset.preset,
+          categories: preset.categories,
+          levels: preset.levels,
+          count: preset.count,
         }),
       });
 
@@ -130,6 +140,11 @@ export const SelectForm = () => {
       return;
     }
 
+    if (selectedLevels.length === 0) {
+      setError("レベルを1つ以上選択してください");
+      return;
+    }
+
     if (count < 1 || count > 50) {
       setError("問題数は1〜50の範囲で入力してください");
       return;
@@ -143,9 +158,8 @@ export const SelectForm = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           platform: selectedPlatform,
-          exam: selectedExam,
           categories: selectedCategories,
-          level,
+          levels: selectedLevels,
           count,
         }),
       });
@@ -167,7 +181,7 @@ export const SelectForm = () => {
 
   if (isLoading) {
     return (
-      <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+      <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
         <p
           role="status"
           aria-live="polite"
@@ -180,16 +194,24 @@ export const SelectForm = () => {
   }
 
   const platforms = Array.from(new Set(categories.map((cat) => cat.platform)));
-  const exams = Array.from(
-    new Set(
-      categories
-        .filter((cat) => cat.platform === selectedPlatform)
-        .map((cat) => cat.exam),
-    ),
-  );
-  const filteredCategories = categories.filter(
-    (cat) => cat.platform === selectedPlatform && cat.exam === selectedExam,
-  );
+  const filteredCategories = (() => {
+    const byPlatform = categories.filter((cat) => cat.platform === selectedPlatform);
+    const merged = new Map<string, CategoryInfo>();
+    for (const cat of byPlatform) {
+      const existing = merged.get(cat.category);
+      if (existing) {
+        const allLevels = new Set([...existing.levels, ...cat.levels]);
+        merged.set(cat.category, {
+          ...existing,
+          levels: Array.from(allLevels).sort((a, b) => a - b),
+          count: existing.count + cat.count,
+        });
+      } else {
+        merged.set(cat.category, { ...cat });
+      }
+    }
+    return Array.from(merged.values());
+  })();
   const isAllSelected =
     filteredCategories.length > 0 &&
     selectedCategories.length === filteredCategories.length;
@@ -216,7 +238,7 @@ export const SelectForm = () => {
       )}
 
       <div className="space-y-4">
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
+        <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
           <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             カスタム学習
           </p>
@@ -237,17 +259,11 @@ export const SelectForm = () => {
                     type="button"
                     onClick={() => {
                       setSelectedPlatform(platform);
-                      const nextExam = categories.find(
-                        (cat) => cat.platform === platform,
-                      )?.exam;
-                      if (nextExam) {
-                        setSelectedExam(nextExam);
-                      }
                       setSelectedCategories([]);
                       setError("");
                     }}
                     aria-pressed={selectedPlatform === platform}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                    className={`min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium transition sm:min-h-0 sm:py-2 ${
                       selectedPlatform === platform
                         ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                         : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
@@ -255,34 +271,6 @@ export const SelectForm = () => {
                     disabled={isSubmitting}
                   >
                     {platform}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                試験
-              </label>
-              <div role="group" aria-label="試験選択" className="flex flex-wrap gap-2">
-                {exams.map((exam) => (
-                  <button
-                    key={exam}
-                    type="button"
-                    onClick={() => {
-                      setSelectedExam(exam);
-                      setSelectedCategories([]);
-                      setError("");
-                    }}
-                    aria-pressed={selectedExam === exam}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                      selectedExam === exam
-                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    {exam}
                   </button>
                 ))}
               </div>
@@ -318,7 +306,7 @@ export const SelectForm = () => {
                       onClick={() => toggleCategory(cat.category)}
                       aria-pressed={isSelected}
                       aria-label={`${cat.category}（${cat.count}問）${isSelected ? "選択中" : "未選択"}`}
-                      className={`rounded-lg border px-3 py-1.5 text-sm transition ${
+                      className={`min-h-[44px] rounded-lg border px-3 py-2.5 text-sm transition sm:min-h-0 sm:py-1.5 ${
                         isSelected
                           ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                           : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
@@ -339,27 +327,55 @@ export const SelectForm = () => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                レベル
-              </label>
-              <div role="group" aria-label="レベル選択" className="flex gap-2">
-                {[1, 2, 3].map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLevel(l)}
-                    aria-pressed={level === l}
-                    aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                      level === l
-                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    Lv.{l}
-                  </button>
-                ))}
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  レベル
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedLevels((prev) =>
+                      prev.length === 3 ? [] : [1, 2, 3],
+                    )
+                  }
+                  aria-pressed={selectedLevels.length === 3}
+                  aria-label={
+                    selectedLevels.length === 3
+                      ? "レベルの全選択を解除"
+                      : "全レベルを選択"
+                  }
+                  className="text-xs text-brand-600 hover:underline dark:text-brand-300"
+                >
+                  {selectedLevels.length === 3 ? "すべて解除" : "全レベル"}
+                </button>
+              </div>
+              <div role="group" aria-label="レベル選択" className="flex flex-wrap gap-2">
+                {[1, 2, 3].map((l) => {
+                  const isSelected = selectedLevels.includes(l);
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() =>
+                        setSelectedLevels((prev) =>
+                          prev.includes(l)
+                            ? prev.filter((v) => v !== l)
+                            : [...prev, l].sort((a, b) => a - b),
+                        )
+                      }
+                      aria-pressed={isSelected}
+                      aria-label={`レベル ${l}${isSelected ? "（選択中）" : ""}`}
+                      className={`min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium transition sm:min-h-0 sm:py-2 ${
+                        isSelected
+                          ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                          : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      Lv.{l}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -384,33 +400,44 @@ export const SelectForm = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting || selectedCategories.length === 0}
-              className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+              disabled={isSubmitting || selectedCategories.length === 0 || selectedLevels.length === 0}
+              className="min-h-[44px] rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               {isSubmitting ? "作成中..." : "テストを開始"}
             </button>
           </form>
         </section>
 
-        <section className="rounded-2xl border border-black/10 bg-white p-6 dark:border-white/15 dark:bg-black/50">
-          <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
+        <div>
+          <p className="mb-3 text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             資格対策
           </p>
-          <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            AWS Certified Cloud Practitioner 想定の出題範囲で、30問のテストを開始します。
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              void handleStartCloudPractitioner();
-            }}
-            disabled={isSubmitting}
-            className="mt-5 w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
-          >
-            {isSubmitting ? "作成中..." : "テストを開始"}
-          </button>
-        </section>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {CERTIFICATION_PRESETS.map((preset) => (
+              <section
+                key={preset.id}
+                className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50"
+              >
+                <div>
+                  <h2 className="text-xl font-semibold">{preset.title}</h2>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    {preset.description}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleStartPreset(preset);
+                  }}
+                  disabled={isSubmitting}
+                  className="mt-5 min-h-[44px] w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+                >
+                  {isSubmitting ? "作成中..." : "テストを開始"}
+                </button>
+              </section>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
