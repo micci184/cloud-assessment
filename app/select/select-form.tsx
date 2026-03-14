@@ -11,16 +11,28 @@ type CategoryInfo = {
   count: number;
 };
 
-const CLOUD_PRACTITIONER_CATEGORIES = [
-  "VPC",
-  "EC2",
-  "S3",
-  "IAM",
-  "CloudWatch",
-  "CloudTrail",
-  "RDS",
-  "Lambda",
-] as const;
+type CertificationPreset = {
+  id: string;
+  preset: string;
+  title: string;
+  description: string;
+  categories: readonly string[];
+  levels: number[];
+  count: number;
+};
+
+const CERTIFICATION_PRESETS: CertificationPreset[] = [
+  {
+    id: "cloud-practitioner",
+    preset: "cloud-practitioner",
+    title: "Cloud Practitioner",
+    description:
+      "AWS Certified Cloud Practitioner 想定の出題範囲で、30問のテストを開始します。",
+    categories: ["VPC", "EC2", "S3", "IAM", "CloudWatch", "CloudTrail", "RDS", "Lambda"],
+    levels: [1, 2, 3],
+    count: 30,
+  },
+];
 
 export const SelectForm = () => {
   const router = useRouter();
@@ -86,7 +98,7 @@ export const SelectForm = () => {
     setSelectedCategories([]);
   };
 
-  const handleStartCloudPractitioner = async (): Promise<void> => {
+  const handleStartPreset = async (preset: CertificationPreset): Promise<void> => {
     setError("");
     setIsSubmitting(true);
 
@@ -95,10 +107,10 @@ export const SelectForm = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          preset: "cloud-practitioner",
-          categories: CLOUD_PRACTITIONER_CATEGORIES,
-          levels: [1, 2, 3],
-          count: 30,
+          preset: preset.preset,
+          categories: preset.categories,
+          levels: preset.levels,
+          count: preset.count,
         }),
       });
 
@@ -396,25 +408,36 @@ export const SelectForm = () => {
           </form>
         </section>
 
-        <section className="rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50">
-          <p className="text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
+        <div>
+          <p className="mb-3 text-xs font-semibold tracking-wide text-neutral-600 dark:text-neutral-300">
             資格対策
           </p>
-          <h2 className="mt-2 text-xl font-semibold">Cloud Practitioner</h2>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
-            AWS Certified Cloud Practitioner 想定の出題範囲で、30問のテストを開始します。
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              void handleStartCloudPractitioner();
-            }}
-            disabled={isSubmitting}
-            className="mt-5 min-h-[44px] w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
-          >
-            {isSubmitting ? "作成中..." : "テストを開始"}
-          </button>
-        </section>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {CERTIFICATION_PRESETS.map((preset) => (
+              <section
+                key={preset.id}
+                className="flex flex-col justify-between rounded-2xl border border-black/10 bg-white p-4 sm:p-6 dark:border-white/15 dark:bg-black/50"
+              >
+                <div>
+                  <h2 className="text-xl font-semibold">{preset.title}</h2>
+                  <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-400">
+                    {preset.description}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleStartPreset(preset);
+                  }}
+                  disabled={isSubmitting}
+                  className="mt-5 min-h-[44px] w-full rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
+                >
+                  {isSubmitting ? "作成中..." : "テストを開始"}
+                </button>
+              </section>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
