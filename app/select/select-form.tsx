@@ -27,7 +27,7 @@ export const SelectForm = () => {
   const [categories, setCategories] = useState<CategoryInfo[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedPlatform, setSelectedPlatform] = useState<string>("");
-  const [level, setLevel] = useState<number>(1);
+  const [selectedLevels, setSelectedLevels] = useState<number[]>([1, 2, 3]);
   const [count, setCount] = useState<number>(5);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -128,6 +128,11 @@ export const SelectForm = () => {
       return;
     }
 
+    if (selectedLevels.length === 0) {
+      setError("レベルを1つ以上選択してください");
+      return;
+    }
+
     if (count < 1 || count > 50) {
       setError("問題数は1〜50の範囲で入力してください");
       return;
@@ -142,7 +147,7 @@ export const SelectForm = () => {
         body: JSON.stringify({
           platform: selectedPlatform,
           categories: selectedCategories,
-          level,
+          levels: selectedLevels,
           count,
         }),
       });
@@ -310,27 +315,55 @@ export const SelectForm = () => {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                レベル
-              </label>
-              <div role="group" aria-label="レベル選択" className="flex gap-2">
-                {[1, 2, 3].map((l) => (
-                  <button
-                    key={l}
-                    type="button"
-                    onClick={() => setLevel(l)}
-                    aria-pressed={level === l}
-                    aria-label={`レベル ${l}${level === l ? "（選択中）" : ""}`}
-                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                      level === l
-                        ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
-                        : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
-                    }`}
-                    disabled={isSubmitting}
-                  >
-                    Lv.{l}
-                  </button>
-                ))}
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                  レベル
+                </label>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedLevels((prev) =>
+                      prev.length === 3 ? [] : [1, 2, 3],
+                    )
+                  }
+                  aria-pressed={selectedLevels.length === 3}
+                  aria-label={
+                    selectedLevels.length === 3
+                      ? "レベルの全選択を解除"
+                      : "全レベルを選択"
+                  }
+                  className="text-xs text-brand-600 hover:underline dark:text-brand-300"
+                >
+                  {selectedLevels.length === 3 ? "すべて解除" : "全レベル"}
+                </button>
+              </div>
+              <div role="group" aria-label="レベル選択" className="flex flex-wrap gap-2">
+                {[1, 2, 3].map((l) => {
+                  const isSelected = selectedLevels.includes(l);
+                  return (
+                    <button
+                      key={l}
+                      type="button"
+                      onClick={() =>
+                        setSelectedLevels((prev) =>
+                          prev.includes(l)
+                            ? prev.filter((v) => v !== l)
+                            : [...prev, l].sort((a, b) => a - b),
+                        )
+                      }
+                      aria-pressed={isSelected}
+                      aria-label={`レベル ${l}${isSelected ? "（選択中）" : ""}`}
+                      className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                        isSelected
+                          ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
+                          : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
+                      }`}
+                      disabled={isSubmitting}
+                    >
+                      Lv.{l}
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -355,7 +388,7 @@ export const SelectForm = () => {
 
             <button
               type="submit"
-              disabled={isSubmitting || selectedCategories.length === 0}
+              disabled={isSubmitting || selectedCategories.length === 0 || selectedLevels.length === 0}
               className="rounded-lg bg-brand-300 px-4 py-2.5 text-sm font-medium text-neutral-900 transition hover:bg-brand-400 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-brand-400 dark:text-white dark:hover:bg-brand-500"
             >
               {isSubmitting ? "作成中..." : "テストを開始"}
