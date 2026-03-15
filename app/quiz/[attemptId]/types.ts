@@ -1,22 +1,13 @@
-import type { CategoryScore } from "@/lib/quiz/types";
+import type {
+  AnsweredQuestion,
+  CategoryScore,
+  QuestionBase,
+} from "@/lib/quiz/types";
 
-export type QuestionData = {
-  attemptQuestionId: string;
-  order: number;
+export type QuestionData = AnsweredQuestion & {
   choiceOrder?: number[];
-  selectedIndex: number | null;
-  selectedIndices: number[] | null;
-  isCorrect: boolean | null;
-  question: {
-    id: string;
-    category: string;
-    level: number;
+  question: QuestionBase & {
     questionType: "SINGLE" | "MULTIPLE";
-    questionText: string;
-    choices: string[];
-    answerIndex?: number;
-    answerIndices?: number[];
-    explanation?: string;
   };
 };
 

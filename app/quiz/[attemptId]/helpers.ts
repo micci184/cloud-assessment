@@ -1,3 +1,5 @@
+import { getUserSelectedIndices } from "@/lib/quiz/helpers";
+
 import type { QuestionData } from "./types";
 
 export const getChoiceOrder = (question: QuestionData): number[] => {
@@ -30,20 +32,8 @@ export const isMultipleChoiceQuestion = (question: QuestionData): boolean => {
   return question.question.questionType === "MULTIPLE";
 };
 
-export const getSelectedOriginalIndices = (
-  question: QuestionData,
-): number[] => {
-  if (question.selectedIndices && question.selectedIndices.length > 0) {
-    return [...question.selectedIndices].sort((a, b) => a - b);
-  }
-
-  if (question.selectedIndex !== null) {
-    return [question.selectedIndex];
-  }
-
-  return [];
-};
+export { getUserSelectedIndices as getSelectedOriginalIndices };
 
 export const isQuestionAnswered = (question: QuestionData): boolean => {
-  return getSelectedOriginalIndices(question).length > 0;
+  return getUserSelectedIndices(question).length > 0;
 };
