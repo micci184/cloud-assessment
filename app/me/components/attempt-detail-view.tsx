@@ -1,3 +1,4 @@
+import { getAnswerIndices, getUserSelectedIndices } from "@/lib/quiz/helpers";
 import type { CategoryScore } from "@/lib/quiz/types";
 
 import type { AttemptDetail } from "../types";
@@ -73,21 +74,12 @@ export const AttemptDetailView = ({ attempt }: Props) => {
               <p className="mb-3 text-sm leading-relaxed">{q.question.questionText}</p>
 
               <div className="mb-3 flex flex-col gap-1.5">
-                {q.question.choices.map((choice, i) => {
-                  const answerIndices =
-                    q.question.answerIndices && q.question.answerIndices.length > 0
-                      ? q.question.answerIndices
-                      : q.question.answerIndex !== undefined
-                        ? [q.question.answerIndex]
-                        : [];
-                  const selectedIndices =
-                    q.selectedIndices && q.selectedIndices.length > 0
-                      ? q.selectedIndices
-                      : q.selectedIndex !== null
-                        ? [q.selectedIndex]
-                        : [];
-                  const isAnswer = answerIndices.includes(i);
-                  const isUserChoice = selectedIndices.includes(i);
+                {(() => {
+                  const answerSet = new Set(getAnswerIndices(q.question));
+                  const userChoiceSet = new Set(getUserSelectedIndices(q));
+                  return q.question.choices.map((choice, i) => {
+                  const isAnswer = answerSet.has(i);
+                  const isUserChoice = userChoiceSet.has(i);
 
                   return (
                     <div
@@ -116,7 +108,8 @@ export const AttemptDetailView = ({ attempt }: Props) => {
                       )}
                     </div>
                   );
-                })}
+                  });
+                })()}
               </div>
 
               {q.question.explanation && (
