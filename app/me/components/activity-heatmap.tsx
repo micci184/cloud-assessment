@@ -78,7 +78,7 @@ export const ActivityHeatmap = ({ items }: Props) => {
         {totalContributions.toLocaleString("en-US")} contributions in the last year
       </p>
       <div className="overflow-x-auto pb-1">
-        <div className="min-w-max rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
+        <div className="mx-auto w-fit min-w-max rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
           <div className="flex flex-col gap-2">
             <div
               className="ml-7 grid"
