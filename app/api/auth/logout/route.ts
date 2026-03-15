@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
-import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
+import {
+  requireAuthenticatedUser,
+  requireAuthenticatedWriteRateLimit,
+  requireValidOrigin,
+} from "@/lib/api/guards";
 import { clearSessionCookie } from "@/lib/auth/cookie";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
@@ -16,6 +20,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       await requireAuthenticatedUser(request);
     if (unauthorizedResponse || !user) {
       return unauthorizedResponse ?? messageResponse("unauthorized", 401);
+    }
+    const rateLimitResponse = requireAuthenticatedWriteRateLimit(request, user.id);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     // Invalidate all existing sessions by rotating tokenVersion.

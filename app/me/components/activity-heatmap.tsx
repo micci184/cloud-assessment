@@ -45,9 +45,6 @@ export const ActivityHeatmap = ({ items }: Props) => {
   }
 
   const weekCount = columns.length;
-  const heatmapCellSize = 10;
-  const heatmapGapSize = 2;
-  const heatmapGridTemplate = `repeat(${weekCount}, ${heatmapCellSize}px)`;
   const maxCount = Math.max(
     ...columns.flatMap((week) =>
       week.filter((day) => day.isInRange).map((day) => day.count),
@@ -81,13 +78,9 @@ export const ActivityHeatmap = ({ items }: Props) => {
         <div className="min-w-max rounded-lg border border-neutral-200 bg-neutral-50 p-2 dark:border-neutral-700 dark:bg-neutral-900/40">
           <div className="flex flex-col gap-2">
             <div
-              className="ml-7 grid"
-              style={{
-                gridTemplateColumns: heatmapGridTemplate,
-                columnGap: `${heatmapGapSize}px`,
-              }}
+              className="ml-7 grid auto-cols-[10px] grid-flow-col gap-x-0.5"
             >
-              {monthLabels.map((label, index) => (
+              {monthLabels.slice(0, weekCount).map((label, index) => (
                 <span
                   key={`${label}-${index}`}
                   className="text-[10px] leading-none text-neutral-500 dark:text-neutral-400"

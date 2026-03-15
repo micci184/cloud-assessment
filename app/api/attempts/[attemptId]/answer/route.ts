@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { answerSchema, attemptParamsSchema } from "@/lib/attempt/schemas";
 import {
   requireAuthenticatedUser,
+  requireAuthenticatedWriteRateLimit,
   requireJsonContentType,
   requireValidOrigin,
 } from "@/lib/api/guards";
@@ -56,6 +57,10 @@ export const POST = async (
       await requireAuthenticatedUser(request);
     if (unauthorizedResponse || !user) {
       return unauthorizedResponse ?? messageResponse("unauthorized", 401);
+    }
+    const rateLimitResponse = requireAuthenticatedWriteRateLimit(request, user.id);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const params = await context.params;

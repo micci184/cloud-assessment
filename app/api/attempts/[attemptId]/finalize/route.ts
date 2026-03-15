@@ -2,7 +2,11 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
 import { attemptParamsSchema } from "@/lib/attempt/schemas";
-import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
+import {
+  requireAuthenticatedUser,
+  requireAuthenticatedWriteRateLimit,
+  requireValidOrigin,
+} from "@/lib/api/guards";
 import { messageResponse, internalServerErrorResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 import {
@@ -30,6 +34,10 @@ export const POST = async (
       await requireAuthenticatedUser(request);
     if (unauthorizedResponse || !user) {
       return unauthorizedResponse ?? messageResponse("unauthorized", 401);
+    }
+    const rateLimitResponse = requireAuthenticatedWriteRateLimit(request, user.id);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const params = await context.params;

@@ -33,12 +33,12 @@ export const AttemptDetailView = ({ attempt }: Props) => {
                   {cat.category}
                 </span>
                 <div className="flex-1">
-                  <div className="h-2.5 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-                    <div
-                      className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
-                      style={{ width: `${cat.percent}%` }}
-                    />
-                  </div>
+                  <progress
+                    value={cat.percent}
+                    max={100}
+                    aria-label={`${cat.category} 正答率`}
+                    className="h-2.5 w-full overflow-hidden rounded-full [appearance:none] [&::-webkit-progress-bar]:bg-neutral-200 [&::-webkit-progress-value]:bg-brand-400 [&::-webkit-progress-value]:transition-all dark:[&::-webkit-progress-bar]:bg-neutral-700 dark:[&::-webkit-progress-value]:bg-brand-300"
+                  />
                 </div>
                 <span className="w-20 text-right text-sm font-medium">
                   {cat.correct}/{cat.total} ({cat.percent}%)

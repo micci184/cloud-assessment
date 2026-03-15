@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   requireAuthenticatedUser,
+  requireAuthenticatedWriteRateLimit,
   requireJsonContentType,
   requireValidOrigin,
 } from "@/lib/api/guards";
@@ -70,6 +71,10 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       await requireAuthenticatedUser(request);
     if (unauthorizedResponse || !user) {
       return unauthorizedResponse ?? messageResponse("unauthorized", 401);
+    }
+    const rateLimitResponse = requireAuthenticatedWriteRateLimit(request, user.id);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
     }
 
     const body: unknown = await request.json();

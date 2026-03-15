@@ -355,7 +355,6 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
   const isCurrentMultiple = currentQuestion
     ? isMultipleChoiceQuestion(currentQuestion)
     : false;
-  const progressPercent = (answeredCount / attempt.questions.length) * 100;
 
   if (!currentQuestion) return null;
 
@@ -368,12 +367,12 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
         </span>
         <span>回答済み: {answeredCount} / {attempt.questions.length}</span>
       </div>
-      <div className="h-2 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
-        <div
-          className="h-full rounded-full bg-brand-400 transition-all dark:bg-brand-300"
-          style={{ width: `${progressPercent}%` }}
-        />
-      </div>
+      <progress
+        value={answeredCount}
+        max={attempt.questions.length}
+        aria-label="回答進捗"
+        className="h-2 w-full overflow-hidden rounded-full [appearance:none] [&::-webkit-progress-bar]:bg-neutral-200 [&::-webkit-progress-value]:bg-brand-400 [&::-webkit-progress-value]:transition-all dark:[&::-webkit-progress-bar]:bg-neutral-700 dark:[&::-webkit-progress-value]:bg-brand-300"
+      />
 
       {/* 問題カード */}
       <section className="rounded-2xl border border-black/10 bg-white p-8 dark:border-white/15 dark:bg-black/50">
