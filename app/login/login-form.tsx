@@ -87,8 +87,13 @@ export const LoginForm = () => {
       });
 
       if (!response.ok) {
-        const data = (await response.json()) as { message?: string };
-        const apiMessage = data.message;
+        let apiMessage: string | undefined;
+        try {
+          const data = (await response.json()) as { message?: string };
+          apiMessage = data.message;
+        } catch {
+          apiMessage = undefined;
+        }
 
         if (mode === "signup" && response.status === 400) {
           setErrors({

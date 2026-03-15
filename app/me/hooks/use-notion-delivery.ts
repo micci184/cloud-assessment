@@ -99,6 +99,7 @@ export const useNotionDelivery = (): UseNotionDeliveryReturn => {
   };
 
   const pollDeliveryStatus = async (attemptId: string): Promise<void> => {
+    try {
     for (
       let pollCount = 0;
       pollCount < NOTION_STATUS_POLL_MAX_ATTEMPTS;
@@ -183,6 +184,13 @@ export const useNotionDelivery = (): UseNotionDeliveryReturn => {
       message: "送信処理の完了待ちがタイムアウトしました",
       kind: "error",
     });
+    } catch {
+      setDeliveryState(attemptId, {
+        isSending: false,
+        message: "通信に失敗しました",
+        kind: "error",
+      });
+    }
   };
 
   return { deliveryStateMap, handleDeliverToNotion };

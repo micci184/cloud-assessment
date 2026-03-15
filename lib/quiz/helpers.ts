@@ -2,7 +2,7 @@ import type { AnsweredQuestion, QuestionBase } from "./types";
 
 export const getAnswerIndices = (question: QuestionBase): number[] => {
   if (question.answerIndices && question.answerIndices.length > 0) {
-    return question.answerIndices;
+    return [...question.answerIndices];
   }
   if (question.answerIndex !== undefined) {
     return [question.answerIndex];
