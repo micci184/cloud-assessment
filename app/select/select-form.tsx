@@ -252,7 +252,11 @@ export const SelectForm = () => {
               <label className="mb-2 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
                 プラットフォーム
               </label>
-              <div role="group" aria-label="プラットフォーム選択" className="flex flex-wrap gap-2">
+              <div
+                role="group"
+                aria-label="プラットフォーム選択"
+                className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+              >
                 {platforms.map((platform) => (
                   <button
                     key={platform}
@@ -263,7 +267,7 @@ export const SelectForm = () => {
                       setError("");
                     }}
                     aria-pressed={selectedPlatform === platform}
-                    className={`min-h-[44px] rounded-lg border px-4 py-2.5 text-sm font-medium transition sm:min-h-0 sm:py-2 ${
+                    className={`min-h-[44px] w-full rounded-lg border px-4 py-2.5 text-center text-sm font-medium transition sm:min-h-0 sm:py-2 ${
                       selectedPlatform === platform
                         ? "border-brand-400 bg-brand-200/40 text-brand-700 dark:border-brand-300 dark:bg-brand-400/20 dark:text-brand-200"
                         : "border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-400 dark:hover:border-neutral-500"
