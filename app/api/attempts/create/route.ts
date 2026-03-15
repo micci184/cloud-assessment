@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 
 import {
   requireAuthenticatedUser,
@@ -41,46 +40,18 @@ const findQuestionsForAttempt = async (input: {
   platform?: string;
   exam?: string;
 }): Promise<Array<{ id: string; choices: unknown }>> => {
-  try {
-    return await prisma.question.findMany({
-      where: {
-        ...(input.platform ? { platform: input.platform } : {}),
-        ...(input.exam ? { exam: input.exam } : {}),
-        category: { in: input.categories },
-        level: input.level !== undefined ? input.level : { in: input.levels ?? [] },
-      },
-      select: {
-        id: true,
-        choices: true,
-      },
-    });
-  } catch (error) {
-    // Backward-compatible fallback for local DBs that have not applied Issue #152 migration yet.
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2022"
-    ) {
-      if (
-        (input.platform !== undefined && input.platform !== "AWS") ||
-        (input.exam !== undefined && input.exam !== "CP")
-      ) {
-        return [];
-      }
-
-      return prisma.question.findMany({
-        where: {
-          category: { in: input.categories },
-          level: input.level !== undefined ? input.level : { in: input.levels ?? [] },
-        },
-        select: {
-          id: true,
-          choices: true,
-        },
-      });
-    }
-
-    throw error;
-  }
+  return prisma.question.findMany({
+    where: {
+      ...(input.platform ? { platform: input.platform } : {}),
+      ...(input.exam ? { exam: input.exam } : {}),
+      category: { in: input.categories },
+      level: input.level !== undefined ? input.level : { in: input.levels ?? [] },
+    },
+    select: {
+      id: true,
+      choices: true,
+    },
+  });
 };
 
 export const POST = async (request: Request): Promise<NextResponse> => {

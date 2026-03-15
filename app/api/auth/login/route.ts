@@ -13,7 +13,7 @@ import {
   getLoginRateLimitKey,
   registerFailedLoginAttempt,
 } from "@/lib/auth/login-rate-limit";
-import { verifyPassword } from "@/lib/auth/password";
+import { verifyPasswordWithTimingSafety } from "@/lib/auth/password";
 import { loginInputSchema } from "@/lib/auth/schemas";
 import { createSessionToken } from "@/lib/auth/session-token";
 import { prisma } from "@/lib/db/prisma";
@@ -65,17 +65,12 @@ export const POST = async (request: Request): Promise<NextResponse> => {
       },
     });
 
-    if (!user) {
-      registerFailedLoginAttempt(rateLimitKey);
-      return messageResponse("メールアドレスまたはパスワードが正しくありません", 401);
-    }
-
-    const passwordMatched = await verifyPassword(
+    const passwordMatched = await verifyPasswordWithTimingSafety(
       parsed.data.password,
-      user.passwordHash,
+      user?.passwordHash ?? null,
     );
 
-    if (!passwordMatched) {
+    if (!user || !passwordMatched) {
       registerFailedLoginAttempt(rateLimitKey);
       return messageResponse("メールアドレスまたはパスワードが正しくありません", 401);
     }
