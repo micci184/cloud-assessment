@@ -396,6 +396,96 @@ const seedQuestions: SeedQuestion[] = [
     explanation:
       "予約済み同時実行により、特定関数のスロット確保や制限ができます。",
   },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "Linux基礎",
+    level: 1,
+    questionText:
+      "Linuxカーネルを含むOSを無償で配布し、改変・再配布も可能とする考え方はどれですか？",
+    choices: ["プロプライエタリ", "オープンソース", "シェアウェア", "フリーウェアのみ"],
+    answerIndex: 1,
+    explanation:
+      "Linuxはオープンソースソフトウェアとして、ライセンス条件のもと改変や再配布が可能です。",
+  },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "Linux基礎",
+    level: 2,
+    questionText:
+      "現在の作業ディレクトリを表示するために使うコマンドはどれですか？",
+    choices: ["ls", "pwd", "cd", "whoami"],
+    answerIndex: 1,
+    explanation: "`pwd` は現在の作業ディレクトリの絶対パスを表示します。",
+  },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "Linux基礎",
+    level: 3,
+    questionText:
+      "ホームディレクトリ配下の `logs` ディレクトリを再帰的に作成するコマンドはどれですか？",
+    choices: [
+      "mkdir ~/logs",
+      "mkdir -p ~/logs",
+      "touch -p ~/logs",
+      "cp -r ~/logs",
+    ],
+    answerIndex: 1,
+    explanation:
+      "`mkdir -p` を使うと、必要な親ディレクトリも含めて再帰的に作成できます。",
+  },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "ファイル操作",
+    level: 1,
+    questionText:
+      "ファイルのアクセス権を `644` に変更するコマンドとして正しいものはどれですか？",
+    choices: [
+      "chown 644 sample.txt",
+      "chmod 644 sample.txt",
+      "chgrp 644 sample.txt",
+      "umask 644 sample.txt",
+    ],
+    answerIndex: 1,
+    explanation: "アクセス権の変更には `chmod` コマンドを使用します。",
+  },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "ファイル操作",
+    level: 2,
+    questionText:
+      "`/var/log/messages` の末尾をリアルタイム監視するコマンドとして適切なのはどれですか？",
+    choices: [
+      "cat /var/log/messages",
+      "tail -f /var/log/messages",
+      "head -f /var/log/messages",
+      "less -f /var/log/messages",
+    ],
+    answerIndex: 1,
+    explanation:
+      "`tail -f` はファイル末尾の追記を監視できるためログ監視でよく使われます。",
+  },
+  {
+    platform: "LinuC",
+    exam: "101",
+    category: "ファイル操作",
+    level: 3,
+    questionText:
+      "現在のディレクトリ配下から `conf` を含むファイル名を再帰検索するコマンドはどれですか？",
+    choices: [
+      "grep -r conf .",
+      "find . -name '*conf*'",
+      "ls -R conf",
+      "whereis conf",
+    ],
+    answerIndex: 1,
+    explanation:
+      "`find . -name '*conf*'` で再帰的にファイル名パターン検索ができます。",
+  },
 ];
 
 const main = async (): Promise<void> => {
