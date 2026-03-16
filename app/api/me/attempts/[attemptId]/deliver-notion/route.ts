@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { NotionDeliveryJobStatus, Prisma } from "@prisma/client";
 
-import { requireAuthenticatedUser, requireValidOrigin } from "@/lib/api/guards";
+import {
+  requireAuthenticatedUser,
+  requireValidOrigin,
+} from "@/lib/api/guards";
 import { attemptParamsSchema } from "@/lib/attempt/schemas";
 import { internalServerErrorResponse, messageResponse } from "@/lib/auth/http";
 import { prisma } from "@/lib/db/prisma";
 import {
   deliverAttemptResultToNotionDetailed,
+  type NotionDeliveryDetailedResult,
   type NotionDeliveryInput,
 } from "@/lib/notion/delivery";
 import { runNotionDeliveryJob } from "@/lib/notion/job";
@@ -146,6 +150,112 @@ const serializeFailedItems = (
   return serialized;
 };
 
+type DeliveryJobSnapshot = {
+  id: string;
+  totalQuestions: number;
+  processedQuestions: number;
+  successQuestions: number;
+  failedQuestions: number;
+  duplicateDetected: boolean;
+  lastError: string | null;
+};
+
+const toDeliveryJobSnapshot = (job: DeliveryJobSnapshot): DeliveryJobSnapshot => {
+  return {
+    id: job.id,
+    totalQuestions: job.totalQuestions,
+    processedQuestions: job.processedQuestions,
+    successQuestions: job.successQuestions,
+    failedQuestions: job.failedQuestions,
+    duplicateDetected: job.duplicateDetected,
+    lastError: job.lastError,
+  };
+};
+
+const normalizeJobStatus = (status: NotionDeliveryJobStatus): string => {
+  if (status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS) {
+    return "failed";
+  }
+  return status.toLowerCase();
+};
+
+const buildFallbackDeliveryResponse = (
+  deliveryResult: NotionDeliveryDetailedResult,
+): NextResponse => {
+  const buildFallbackSnapshot = (): DeliveryJobSnapshot => {
+    if (deliveryResult.status === "skipped") {
+      return {
+        id: "",
+        totalQuestions: 0,
+        processedQuestions: 0,
+        successQuestions: 0,
+        failedQuestions: 0,
+        duplicateDetected: false,
+        lastError: null,
+      };
+    }
+
+    return {
+      id: "",
+      totalQuestions: deliveryResult.totalQuestions,
+      processedQuestions: deliveryResult.processedQuestions,
+      successQuestions: deliveryResult.successQuestions,
+      failedQuestions: deliveryResult.failedQuestions,
+      duplicateDetected: deliveryResult.duplicate,
+      lastError:
+        deliveryResult.status === "failed"
+          ? deliveryResult.errorMessage
+          : deliveryResult.failures[0]?.errorMessage ?? null,
+    };
+  };
+
+  const job = buildFallbackSnapshot();
+
+  if (deliveryResult.status === "completed") {
+    return NextResponse.json(
+      {
+        status: "completed",
+        message: deliveryResult.duplicate
+          ? "already delivered"
+          : "notion delivery completed",
+        job,
+      },
+      { status: 200 },
+    );
+  }
+
+  if (deliveryResult.status === "completed_with_errors") {
+    return NextResponse.json(
+      {
+        status: "failed",
+        message: `partial failure: ${deliveryResult.failedQuestions} items failed`,
+        job,
+      },
+      { status: 502 },
+    );
+  }
+
+  if (deliveryResult.status === "failed") {
+    return NextResponse.json(
+      {
+        status: "failed",
+        message: deliveryResult.errorMessage,
+        job,
+      },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json(
+    {
+      status: "failed",
+      message: "missing notion config",
+      job,
+    },
+    { status: 502 },
+  );
+};
+
 const loadAttemptForDelivery = async (
   attemptId: string,
   userId: string,
@@ -220,78 +330,10 @@ const POST = async (
       return errorResponse ?? messageResponse("attempt not found", 404);
     }
 
-    // Fallback path: if Prisma Client does not include NotionDeliveryJob model yet,
-    // deliver immediately instead of returning 503 to keep API usable.
     if (!notionDeliveryJob) {
       const input = buildDeliveryInput(attempt);
       const deliveryResult = await deliverAttemptResultToNotionDetailed(input);
-
-      if (deliveryResult.status === "completed") {
-        return NextResponse.json(
-          {
-            status: "completed",
-            message: deliveryResult.duplicate
-              ? "already delivered"
-              : "notion delivery completed",
-            job: {
-              id: "",
-              totalQuestions: deliveryResult.totalQuestions,
-              processedQuestions: deliveryResult.processedQuestions,
-              successQuestions: deliveryResult.successQuestions,
-              failedQuestions: deliveryResult.failedQuestions,
-              duplicateDetected: deliveryResult.duplicate,
-              lastError: null,
-            },
-          },
-          { status: 200 },
-        );
-      }
-
-      if (deliveryResult.status === "completed_with_errors") {
-        return NextResponse.json(
-          {
-            status: "failed",
-            message: `partial failure: ${deliveryResult.failedQuestions} items failed`,
-            job: {
-              id: "",
-              totalQuestions: deliveryResult.totalQuestions,
-              processedQuestions: deliveryResult.processedQuestions,
-              successQuestions: deliveryResult.successQuestions,
-              failedQuestions: deliveryResult.failedQuestions,
-              duplicateDetected: deliveryResult.duplicate,
-              lastError: deliveryResult.failures[0]?.errorMessage ?? null,
-            },
-          },
-          { status: 502 },
-        );
-      }
-
-      if (deliveryResult.status === "failed") {
-        return NextResponse.json(
-          {
-            status: "failed",
-            message: deliveryResult.errorMessage,
-            job: {
-              id: "",
-              totalQuestions: deliveryResult.totalQuestions,
-              processedQuestions: deliveryResult.processedQuestions,
-              successQuestions: deliveryResult.successQuestions,
-              failedQuestions: deliveryResult.failedQuestions,
-              duplicateDetected: deliveryResult.duplicate,
-              lastError: deliveryResult.errorMessage,
-            },
-          },
-          { status: 502 },
-        );
-      }
-
-      return NextResponse.json(
-        {
-          status: "failed",
-          message: "missing notion config",
-        },
-        { status: 502 },
-      );
+      return buildFallbackDeliveryResponse(deliveryResult);
     }
 
     const existingJob = await findActiveNotionDeliveryJob(attempt.id, user.id);
@@ -299,16 +341,8 @@ const POST = async (
     if (existingJob) {
       return NextResponse.json(
         {
-          status: existingJob.status.toLowerCase(),
-          job: {
-            id: existingJob.id,
-            totalQuestions: existingJob.totalQuestions,
-            processedQuestions: existingJob.processedQuestions,
-            successQuestions: existingJob.successQuestions,
-            failedQuestions: existingJob.failedQuestions,
-            duplicateDetected: existingJob.duplicateDetected,
-            lastError: existingJob.lastError,
-          },
+          status: normalizeJobStatus(existingJob.status),
+          job: toDeliveryJobSnapshot(existingJob),
         },
         { status: 202 },
       );
@@ -333,22 +367,10 @@ const POST = async (
           (await findActiveNotionDeliveryJob(attempt.id, user.id)) ??
           (await findLatestNotionDeliveryJob(attempt.id, user.id));
         if (concurrentJob) {
-          const status =
-            concurrentJob.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
-              ? "failed"
-              : concurrentJob.status.toLowerCase();
           return NextResponse.json(
             {
-              status,
-              job: {
-                id: concurrentJob.id,
-                totalQuestions: concurrentJob.totalQuestions,
-                processedQuestions: concurrentJob.processedQuestions,
-                successQuestions: concurrentJob.successQuestions,
-                failedQuestions: concurrentJob.failedQuestions,
-                duplicateDetected: concurrentJob.duplicateDetected,
-                lastError: concurrentJob.lastError,
-              },
+              status: normalizeJobStatus(concurrentJob.status),
+              job: toDeliveryJobSnapshot(concurrentJob),
             },
             { status: 202 },
           );
@@ -363,15 +385,7 @@ const POST = async (
     return NextResponse.json(
       {
         status: "queued",
-        job: {
-          id: job.id,
-          totalQuestions: job.totalQuestions,
-          processedQuestions: job.processedQuestions,
-          successQuestions: job.successQuestions,
-          failedQuestions: job.failedQuestions,
-          duplicateDetected: job.duplicateDetected,
-          lastError: job.lastError,
-        },
+        job: toDeliveryJobSnapshot(job),
       },
       { status: 202 },
     );
@@ -429,10 +443,7 @@ const GET = async (
       return NextResponse.json({ status: "idle" }, { status: 200 });
     }
 
-    const normalizedStatus =
-      job.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
-        ? "failed"
-        : job.status.toLowerCase();
+    const normalizedStatus = normalizeJobStatus(job.status);
     const message =
       job.status === NotionDeliveryJobStatus.COMPLETED_WITH_ERRORS
         ? `一部送信に失敗しました（失敗 ${job.failedQuestions} 件）`
@@ -443,13 +454,7 @@ const GET = async (
         status: normalizedStatus,
         message,
         job: {
-          id: job.id,
-          totalQuestions: job.totalQuestions,
-          processedQuestions: job.processedQuestions,
-          successQuestions: job.successQuestions,
-          failedQuestions: job.failedQuestions,
-          duplicateDetected: job.duplicateDetected,
-          lastError: job.lastError,
+          ...toDeliveryJobSnapshot(job),
           failedItems,
           startedAt: job.startedAt,
           finishedAt: job.finishedAt,
