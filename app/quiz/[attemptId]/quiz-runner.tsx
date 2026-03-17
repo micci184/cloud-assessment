@@ -24,6 +24,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
   const questionNavButtonRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const questionTitleRef = useRef<HTMLHeadingElement>(null);
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const submittingAttemptQuestionIdRef = useRef<string | null>(null);
 
   const fetchAttempt = useCallback(async () => {
     try {
@@ -91,10 +92,12 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
   }, [attempt, currentIndex]);
 
   const handleAnswer = async (): Promise<void> => {
-    if (draftSelectedChoices.length === 0 || !attempt) return;
+    if (draftSelectedChoices.length === 0 || !attempt || isSubmitting) return;
 
     const currentQuestion = attempt.questions[currentIndex];
     if (!currentQuestion) return;
+    const submittingAttemptQuestionId = currentQuestion.attemptQuestionId;
+    const submittingQuestionIndex = currentIndex;
     const choiceOrder = getChoiceOrder(currentQuestion);
     const selectedOriginalIndices = draftSelectedChoices
       .map((displayIndex) => choiceOrder[displayIndex])
@@ -107,6 +110,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
     }
 
     setIsSubmitting(true);
+    submittingAttemptQuestionIdRef.current = submittingAttemptQuestionId;
     setError("");
 
     try {
@@ -114,7 +118,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          attemptQuestionId: currentQuestion.attemptQuestionId,
+          attemptQuestionId: submittingAttemptQuestionId,
           ...(isMultipleChoiceQuestion(currentQuestion)
             ? { selectedIndices: selectedOriginalIndices }
             : { selectedIndex: selectedOriginalIndices[0] }),
@@ -132,6 +136,12 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
         selectedIndex: number | null;
         selectedIndices?: number[] | null;
       };
+
+      if (result.attemptQuestionId !== submittingAttemptQuestionIdRef.current) {
+        setError("回答対象が変更されました。最新状態を再取得します");
+        await fetchAttempt();
+        return;
+      }
 
       setAttempt((prev) => {
         if (!prev) return prev;
@@ -156,12 +166,18 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
 
       setDraftSelectedChoices([]);
 
-      if (currentIndex < attempt.questions.length - 1) {
-        setCurrentIndex(currentIndex + 1);
-      }
+      setCurrentIndex((prev) => {
+        if (prev !== submittingQuestionIndex) {
+          return prev;
+        }
+
+        const lastQuestionIndex = attempt.questions.length - 1;
+        return prev < lastQuestionIndex ? prev + 1 : prev;
+      });
     } catch {
       setError("通信に失敗しました");
     } finally {
+      submittingAttemptQuestionIdRef.current = null;
       setIsSubmitting(false);
     }
   };
@@ -241,7 +257,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
   };
 
   const moveQuestionByKeyboard = (nextIndex: number): void => {
-    if (!attempt) {
+    if (!attempt || isSubmitting) {
       return;
     }
 
@@ -255,7 +271,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
     event: React.KeyboardEvent<HTMLButtonElement>,
     questionIndex: number,
   ): void => {
-    if (!attempt) {
+    if (!attempt || isSubmitting) {
       return;
     }
 
@@ -480,10 +496,13 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
             <button
               type="button"
               onClick={() => {
+                if (isSubmitting) {
+                  return;
+                }
                 setCurrentIndex(Math.max(0, currentIndex - 1));
                 setDraftSelectedChoices([]);
               }}
-              disabled={currentIndex === 0}
+              disabled={currentIndex === 0 || isSubmitting}
               className="rounded-lg border border-neutral-300 px-4 py-2 text-sm transition hover:border-neutral-400 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-600 dark:hover:border-neutral-500"
             >
               前へ
@@ -493,9 +512,13 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
                 <button
                   type="button"
                   onClick={() => {
+                    if (isSubmitting) {
+                      return;
+                    }
                     setCurrentIndex(currentIndex + 1);
                     setDraftSelectedChoices([]);
                   }}
+                  disabled={isSubmitting}
                   className="rounded-lg border border-neutral-300 px-4 py-2 text-sm transition hover:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-500"
                 >
                   次へ
@@ -541,6 +564,9 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
               questionNavButtonRefs.current[i] = element;
             }}
             onClick={() => {
+              if (isSubmitting) {
+                return;
+              }
               setCurrentIndex(i);
               setDraftSelectedChoices([]);
             }}
@@ -549,6 +575,7 @@ export const QuizRunner = ({ attemptId }: QuizRunnerProps) => {
             }}
             aria-current={i === currentIndex ? "true" : undefined}
             aria-label={`問題 ${q.order}${isQuestionAnswered(q) ? "（回答済み）" : "（未回答）"}`}
+            disabled={isSubmitting}
             className={`h-9 w-9 rounded-md text-xs font-medium transition ${
               i === currentIndex
                 ? "scale-105 bg-brand-300 text-neutral-900 shadow-sm ring-2 ring-brand-300/40 dark:bg-brand-400 dark:text-white dark:ring-brand-300/30"
